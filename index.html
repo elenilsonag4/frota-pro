@@ -1,0 +1,115 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#12352b">
+  <meta name="description" content="Sistema de gestão de frota Frota PRO">
+  <title>Frota PRO | Gestão de Frota</title>
+
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase.js" defer></script>
+  <script src="js/app.js" defer></script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-logo">F</div>
+      <div>
+        <h1>Frota PRO</h1>
+        <p>Sistema de gestão de frota</p>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="welcome">
+      <h2>Bem-vindo ao Frota PRO</h2>
+      <p>
+        Gestão de veículos, motoristas, abastecimentos,
+        manutenção e estoque em um só lugar.
+      </p>
+    </section>
+
+    <div class="main-grid">
+      <section class="card login-card">
+        <h2>Acessar o sistema</h2>
+        <p>Entre com seu e-mail e sua senha cadastrados.</p>
+
+        <form id="login-form">
+          <label for="email">E-mail</label>
+          <input
+            id="email"
+            name="email"
+            type="email"
+            autocomplete="username"
+            placeholder="seu@email.com"
+            required
+          >
+
+          <label for="password">Senha</label>
+          <input
+            id="password"
+            name="password"
+            type="password"
+            autocomplete="current-password"
+            placeholder="Digite sua senha"
+            required
+          >
+
+          <button class="button button-primary" type="submit">
+            Entrar
+          </button>
+
+          <p id="login-message" class="message" role="status" aria-live="polite"></p>
+        </form>
+      </section>
+
+      <section class="card modules-card">
+        <h2>Gestão completa</h2>
+        <p>Os módulos serão disponibilizados gradualmente.</p>
+
+        <div class="module-list">
+          <article class="module-item">
+            <div class="module-icon">🚚</div>
+            <div>
+              <h3>Veículos e motoristas</h3>
+              <p>Cadastro e consulta da frota e dos responsáveis.</p>
+            </div>
+          </article>
+
+          <article class="module-item">
+            <div class="module-icon">⛽</div>
+            <div>
+              <h3>Abastecimento</h3>
+              <p>Registro e acompanhamento de abastecimentos.</p>
+            </div>
+          </article>
+
+          <article class="module-item">
+            <div class="module-icon">🔧</div>
+            <div>
+              <h3>Manutenção e revisões</h3>
+              <p>Histórico de serviços e controle de revisões.</p>
+            </div>
+          </article>
+
+          <article class="module-item">
+            <div class="module-icon">📦</div>
+            <div>
+              <h3>Peças e estoque</h3>
+              <p>Organização das peças e movimentações.</p>
+            </div>
+          </article>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <footer class="footer">
+    Frota PRO · Gestão de frota
+  </footer>
+</body>
+</html>
