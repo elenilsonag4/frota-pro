@@ -261,3 +261,212 @@ input:focus {
     transition-duration: 0.01ms !important;
   }
 }
+
+```css
+/* ========================================
+   FROTA PRO — PAINEL PRINCIPAL
+   ======================================== */
+
+.pagina-painel {
+  margin: 0;
+  padding-bottom: 90px;
+  background: var(--background, #f3f6f4);
+  color: var(--text, #17251f);
+}
+
+/* Cabeçalho */
+
+.painel-topo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 16px;
+  background: var(--green, #12352b);
+  color: #fff;
+  border-bottom: 3px solid var(--gold, #e5b94f);
+}
+
+.painel-marca {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.painel-logo {
+  width: 64px;
+  height: auto;
+  object-fit: contain;
+}
+
+.painel-marca h1 {
+  margin: 0;
+  font-size: 20px;
+}
+
+.painel-marca p {
+  margin: 4px 0 0;
+  font-size: 12px;
+  opacity: 0.85;
+}
+
+#botao-sair {
+  padding: 8px 12px;
+  border: 1px solid rgba(255,255,255,.6);
+  border-radius: 8px;
+  background: transparent;
+  color: #fff;
+  cursor: pointer;
+}
+
+/* Conteúdo principal */
+
+.painel-conteudo {
+  width: calc(100% - 32px);
+  max-width: 1100px;
+  margin: 22px auto;
+}
+
+.boas-vindas {
+  margin-bottom: 20px;
+}
+
+.boas-vindas h2 {
+  margin: 0 0 6px;
+  font-size: 22px;
+}
+
+.boas-vindas p {
+  margin: 0;
+  color: var(--muted, #68766f);
+}
+
+.area-modulo {
+  min-height: 180px;
+  padding: 20px;
+  background: var(--surface, #fff);
+  border: 1px solid var(--border, #dce5df);
+  border-radius: 12px;
+}
+
+.area-modulo h3 {
+  margin-top: 0;
+  color: var(--green, #12352b);
+}
+
+/* Menu inferior fixo */
+
+.menu-inferior {
+  position: fixed;
+  z-index: 1000;
+  right: 0;
+  bottom: 0;
+  left: 0;
+
+  display: flex;
+  justify-content: flex-start;
+  gap: 4px;
+  overflow-x: auto;
+
+  padding: 8px 6px;
+  padding-bottom: max(8px, env(safe-area-inset-bottom));
+
+  background: var(--surface, #fff);
+  border-top: 1px solid var(--border, #dce5df);
+  box-shadow: 0 -3px 12px rgba(0,0,0,.08);
+
+  scrollbar-width: thin;
+}
+
+/* Botões e ícones */
+
+.item-menu {
+  flex: 1 0 88px;
+  min-width: 70px;
+  max-width: 150px;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+
+  padding: 7px 4px;
+  border: 0;
+  border-radius: 9px;
+
+  background: transparent;
+  color: var(--muted, #68766f);
+
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  text-align: center;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.item-menu svg {
+  display: block;
+  width: 23px;
+  height: 23px;
+  flex-shrink: 0;
+
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.item-menu.ativo {
+  background: rgba(30,89,70,.10);
+  color: var(--green, #12352b);
+}
+
+.item-menu:focus-visible,
+#botao-sair:focus-visible {
+  outline: 2px solid var(--gold, #e5b94f);
+  outline-offset: 2px;
+}
+
+/* Adaptação para celular */
+
+@media (max-width: 600px) {
+  .painel-topo {
+    padding: 9px 10px;
+  }
+
+  .painel-logo {
+    width: 52px;
+  }
+
+  .painel-marca h1 {
+    font-size: 17px;
+  }
+
+  .painel-marca p {
+    font-size: 11px;
+  }
+
+  #botao-sair {
+    padding: 8px;
+  }
+
+  .painel-conteudo {
+    margin-top: 16px;
+  }
+
+  .boas-vindas h2 {
+    font-size: 19px;
+  }
+
+  .area-modulo {
+    padding: 15px;
+  }
+
+  .item-menu {
+    flex-basis: 78px;
+  }
+}
+```
