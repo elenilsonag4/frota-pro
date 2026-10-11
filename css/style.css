@@ -53,8 +53,8 @@ input {
 .brand-logo {
   width: auto;
   height: auto;
-  max-width: 220px;
-  max-height: 90px;
+  max-width: 132px;
+  max-height: 54px;
   flex: 0 1 auto;
   display: block;
   object-fit: contain;
