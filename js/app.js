@@ -78,11 +78,11 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       showMessage(
-        `Login confirmado. Bem-vindo${profile.full_name ? ", " + profile.full_name : ""}! A próxima etapa será abrir o painel do sistema.`,
-        "success"
-      );
+  `Login confirmado. Bem-vindo${profile.full_name ? ", " + profile.full_name : ""}!`,
+  "success"
+);
 
-      loginForm.reset();
+window.location.href = "painel.html";
     } catch (error) {
       showMessage(
         error.message || "Não foi possível entrar. Confira seus dados.",
