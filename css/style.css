@@ -51,10 +51,10 @@ input {
 
 
 .brand-logo {
-  width: auto;
+  width: 110px;
   height: auto;
-  max-width: 132px;
-  max-height: 54px;
+  max-width: 100%;
+  max-height: none;
   flex: 0 1 auto;
   display: block;
   object-fit: contain;
