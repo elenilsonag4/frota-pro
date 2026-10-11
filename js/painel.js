@@ -1,4 +1,3 @@
-```javascript
 document.addEventListener("DOMContentLoaded", async () => {
   const supabaseClient = window.frotaSupabase;
 
@@ -135,4 +134,4 @@ document.addEventListener("DOMContentLoaded", async () => {
     irParaLogin();
   }
 });
-```
+
