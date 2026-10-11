@@ -49,18 +49,19 @@ input {
   gap: 13px;
 }
 
+
 .brand-logo {
-  width: 46px;
-  height: 46px;
-  flex: 0 0 46px;
-  display: grid;
-  place-items: center;
-  border-radius: 12px;
-  background: var(--gold);
-  color: var(--green);
-  font-size: 24px;
-  font-weight: 800;
+  width: auto;
+  height: auto;
+  max-width: 220px;
+  max-height: 90px;
+  flex: 0 1 auto;
+  display: block;
+  object-fit: contain;
+  border-radius: 0;
+  background: transparent;
 }
+
 
 .brand h1 {
   margin: 0;
