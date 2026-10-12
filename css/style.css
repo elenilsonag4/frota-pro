@@ -1008,3 +1008,11 @@ body.pagina-painel .painel-ajustes select {
 @media(max-width:600px) { .frota-campos { grid-template-columns:1fr; } .frota-form { padding:11px; } }
 body.tema-escuro .frota-form, body.tema-escuro .frota-campos input, body.tema-escuro .frota-campos select, body.tema-escuro .frota-botao.frota-secundario { background:#292d31; color:#f2f2f2; }
 body.tema-escuro .frota-tabela th { background:#454b50; }
+
+/* Ações de edição e exclusão nas tabelas do Frota PRO */
+.frota-acoes-linha { white-space: nowrap; }
+.frota-icone-acao { display:inline-flex; align-items:center; justify-content:center; width:34px; height:34px; margin:0 3px; padding:0; border:1px solid var(--border,#dce5df); border-radius:9px; background:var(--surface,#fff); color:var(--text,#25332d); cursor:pointer; font-size:16px; }
+.frota-icone-acao:hover { transform:translateY(-1px); box-shadow:0 2px 7px #00000018; }
+.frota-icone-acao.frota-excluir { color:#b42318; }
+body.tema-escuro .frota-icone-acao { background:#292d31; color:#f2f2f2; border-color:#555b60; }
+body.tema-escuro .frota-icone-acao.frota-excluir { color:#ff9188; }
