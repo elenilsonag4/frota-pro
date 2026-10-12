@@ -8,31 +8,30 @@
 </head>
 
 <body class="pagina-painel">
-  <header class="painel-topo">
-<div class="painel-marca">
-  <img src="logo.png" alt="Logo Frota PRO" class="painel-logo">
-  <div>
-    <h1>Frota PRO</h1>
-    <p id="nome-usuario">Carregando usuário...</p>
+  ```html
+<header class="painel-topo">
+  <div class="painel-marca">
+    <img src="logo.png" alt="Logo Frota PRO" class="painel-logo">
+    <p id="nome-usuario">Usuário</p>
   </div>
-</div>
 
-<div class="painel-acoes">
-  <button
-    id="botao-ajustes"
-    class="botao-ajustes"
-    type="button"
-    aria-label="Abrir ajustes"
-    title="Ajustes"
-  >
-    <svg viewBox="0 0 24 24" aria-hidden="true">
-      <circle cx="12" cy="12" r="3"></circle>
-      <path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-1.7 2.9-.2-.1a1.7 1.7 0 0 0-1.8 0 1.7 1.7 0 0 0-.9 1.5v.2h-3.4v-.2a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.7 0l-.2.1-1.7-2.9.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H6v-3.4h.2a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.8l-.1-.2L9 4.7l.2.1a1.7 1.7 0 0 0 1.7 0 1.7 1.7 0 0 0 1-1.5v-.2h3.4v.2a1.7 1.7 0 0 0 .9 1.5 1.7 1.7 0 0 0 1.8 0l.2-.1 1.7 2.9-.1.2a1.7 1.7 0 0 0-.3 1.8 1.7 1.7 0 0 0 1.5 1h.2V14h-.2a1.7 1.7 0 0 0-1.6 1z"></path>
-    </svg>
-  </button>
+  <div class="painel-acoes">
+    <button
+      id="botao-ajustes"
+      class="botao-ajustes"
+      type="button"
+      aria-label="Ajustes"
+      title="Ajustes"
+    >
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <circle cx="12" cy="12" r="3"></circle>
+        <path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-1.7 2.9-.2-.1a1.7 1.7 0 0 0-1.8 0 1.7 1.7 0 0 0-.9 1.5v.2h-3.4v-.2a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.7 0l-.2.1-1.7-2.9.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H6v-3.4h.2a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.8l-.1-.2L9 4.7l.2.1a1.7 1.7 0 0 0 1.7 0 1.7 1.7 0 0 0 1-1.5v-.2h3.4v.2a1.7 1.7 0 0 0 .9 1.5 1.7 1.7 0 0 0 1.8 0l.2-.1 1.7 2.9-.1.2a1.7 1.7 0 0 0-.3 1.8 1.7 1.7 0 0 0 1.5 1h.2V14h-.2a1.7 1.7 0 0 0-1.6 1z"></path>
+      </svg>
+    </button>
 
-  <button id="botao-sair" type="button">Sair</button>
-</div>
+    <button id="botao-sair" type="button">Sair</button>
+  </div>
+</header>
 
 <div id="painel-ajustes" class="painel-ajustes" hidden>
   <h3>Ajustes</h3>
@@ -44,17 +43,9 @@
   </select>
 
   <label for="tamanho-fonte">Tamanho da fonte</label>
-  <input
-    id="tamanho-fonte"
-    type="range"
-    min="12"
-    max="22"
-    value="16"
-    step="1"
-  >
+  <input id="tamanho-fonte" type="range" min="12" max="22" value="16" step="1">
   <span id="valor-fonte">16 px</span>
 </div>
-  </header>
 
   <main class="painel-conteudo">
     <section class="boas-vindas" id="boas-vindas">
