@@ -106,13 +106,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     function aplicarTema(tema) {
       const temasValidos = ["claro", "verde", "azul", "escuro"];
       if (!temasValidos.includes(tema)) tema = "claro";
-
-      // Remove classes de temas anteriores antes de aplicar o selecionado.
       document.body.classList.remove(
         "tema-claro", "tema-verde", "tema-azul", "tema-escuro"
       );
       document.body.classList.add(`tema-${tema}`);
-
       if (seletorTema) seletorTema.value = tema;
       localStorage.setItem("frota-tema", tema);
     }
