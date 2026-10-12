@@ -656,3 +656,101 @@ input:focus {
     max-height: 42px;
   }
 }
+
+
+/* Temas do Frota PRO: claro, verde, azul e escuro */
+.pagina-painel.tema-verde {
+  --green: #12352b;
+  --green-light: #1e5946;
+  --background: #f3f6f4;
+  --surface: #ffffff;
+  --text: #17251f;
+  --muted: #68766f;
+  --border: #dce5df;
+}
+
+.pagina-painel.tema-azul {
+  --green: #163b63;
+  --green-light: #245b91;
+  --background: #f2f6fb;
+  --surface: #ffffff;
+  --text: #182638;
+  --muted: #64758a;
+  --border: #d8e2ee;
+}
+
+.pagina-painel.tema-azul .painel-topo {
+  background: #163b63;
+}
+
+.pagina-painel.tema-azul .area-modulo h3,
+.pagina-painel.tema-azul .item-menu.ativo {
+  color: #163b63;
+}
+
+.pagina-painel.tema-azul .item-menu.ativo {
+  background: rgba(36,91,145,.12);
+}
+
+.pagina-painel.tema-escuro {
+  --green: #24272b;
+  --green-light: #353a40;
+  --background: #17191c;
+  --surface: #24272b;
+  --text: #f1f3f5;
+  --muted: #c1c7ce;
+  --border: #454b52;
+}
+
+.pagina-painel.tema-escuro .painel-topo {
+  background: #24272b;
+  border-bottom-color: #777f88;
+}
+
+.pagina-painel.tema-escuro .area-modulo,
+.pagina-painel.tema-escuro .painel-ajustes {
+  background: #24272b;
+  color: #f1f3f5;
+  border-color: #454b52;
+}
+
+.pagina-painel.tema-escuro .area-modulo h3 {
+  color: #f1f3f5;
+}
+
+.pagina-painel.tema-escuro .menu-inferior {
+  background: #202327;
+  border-top-color: #454b52;
+}
+
+/* Garantir que ícones e nomes das abas continuem visíveis no tema escuro */
+.pagina-painel.tema-escuro .item-menu {
+  color: #d7dce2;
+  background: transparent;
+}
+
+.pagina-painel.tema-escuro .item-menu svg {
+  stroke: currentColor;
+  opacity: 1;
+}
+
+.pagina-painel.tema-escuro .item-menu span {
+  color: inherit;
+  opacity: 1;
+}
+
+.pagina-painel.tema-escuro .item-menu.ativo {
+  color: #ffffff;
+  background: #41474f;
+}
+
+.pagina-painel.tema-escuro .painel-ajustes label,
+.pagina-painel.tema-escuro .painel-ajustes span {
+  color: #f1f3f5;
+}
+
+.pagina-painel.tema-escuro .painel-ajustes select {
+  background: #17191c;
+  color: #f1f3f5;
+  border: 1px solid #555c64;
+}
