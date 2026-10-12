@@ -754,3 +754,175 @@ input:focus {
   color: #f1f3f5;
   border: 1px solid #555c64;
 }
+
+
+/* PALETAS DEFINITIVAS — Frota PRO */
+body.pagina-painel.tema-claro {
+  --green: #e8e0d2;
+  --green-light: #d8cdbb;
+  --background: #f8f7f4;
+  --surface: #ffffff;
+  --text: #343434;
+  --muted: #686868;
+  --border: #dedbd5;
+  background: #f8f7f4 !important;
+  color: #343434 !important;
+}
+body.pagina-painel.tema-claro .painel-topo {
+  background: #e8e0d2 !important;
+  color: #343434 !important;
+  border-bottom-color: #c9c0b2 !important;
+}
+body.pagina-painel.tema-claro .painel-marca p,
+body.pagina-painel.tema-claro #botao-sair,
+body.pagina-painel.tema-claro .botao-ajustes {
+  color: #343434 !important;
+}
+body.pagina-painel.tema-claro .botao-ajustes,
+body.pagina-painel.tema-claro #botao-sair {
+  border-color: #8f887d !important;
+}
+body.pagina-painel.tema-claro .menu-inferior {
+  background: #ffffff !important;
+  border-top-color: #dedbd5 !important;
+}
+body.pagina-painel.tema-claro .item-menu {
+  color: #686868 !important;
+}
+body.pagina-painel.tema-claro .item-menu.ativo {
+  color: #343434 !important;
+  background: #eee9e1 !important;
+}
+
+body.pagina-painel.tema-verde {
+  --green: #12352b;
+  --green-light: #1e5946;
+  --background: #f3f6f4;
+  --surface: #ffffff;
+  --text: #17251f;
+  --muted: #68766f;
+  --border: #dce5df;
+  background: #f3f6f4 !important;
+  color: #17251f !important;
+}
+body.pagina-painel.tema-verde .painel-topo {
+  background: #12352b !important;
+  color: #ffffff !important;
+  border-bottom-color: #e5b94f !important;
+}
+body.pagina-painel.tema-verde .painel-marca p,
+body.pagina-painel.tema-verde #botao-sair,
+body.pagina-painel.tema-verde .botao-ajustes {
+  color: #ffffff !important;
+}
+body.pagina-painel.tema-verde .menu-inferior {
+  background: #ffffff !important;
+}
+body.pagina-painel.tema-verde .item-menu {
+  color: #68766f !important;
+}
+body.pagina-painel.tema-verde .item-menu.ativo {
+  color: #12352b !important;
+  background: #e8efeb !important;
+}
+
+body.pagina-painel.tema-azul {
+  --green: #234a70;
+  --green-light: #356b9b;
+  --background: #f3f2ee;
+  --surface: #ffffff;
+  --text: #273746;
+  --muted: #687581;
+  --border: #d8d9d8;
+  background: #f3f2ee !important;
+  color: #273746 !important;
+}
+body.pagina-painel.tema-azul .painel-topo {
+  background: #234a70 !important;
+  color: #ffffff !important;
+  border-bottom-color: #c8bda9 !important;
+}
+body.pagina-painel.tema-azul .painel-marca p,
+body.pagina-painel.tema-azul #botao-sair,
+body.pagina-painel.tema-azul .botao-ajustes {
+  color: #ffffff !important;
+}
+body.pagina-painel.tema-azul .menu-inferior {
+  background: #ffffff !important;
+}
+body.pagina-painel.tema-azul .item-menu {
+  color: #687581 !important;
+}
+body.pagina-painel.tema-azul .item-menu.ativo {
+  color: #234a70 !important;
+  background: #e6edf3 !important;
+}
+
+body.pagina-painel.tema-escuro {
+  --green: #303236;
+  --green-light: #45484d;
+  --background: #292b2f;
+  --surface: #373a3f;
+  --text: #eeeeef;
+  --muted: #c2c5c9;
+  --border: #50545a;
+  background: #292b2f !important;
+  color: #eeeeef !important;
+}
+body.pagina-painel.tema-escuro .painel-topo {
+  background: #303236 !important;
+  color: #ffffff !important;
+  border-bottom-color: #666a70 !important;
+}
+body.pagina-painel.tema-escuro .painel-marca p,
+body.pagina-painel.tema-escuro #botao-sair,
+body.pagina-painel.tema-escuro .botao-ajustes {
+  color: #ffffff !important;
+}
+body.pagina-painel.tema-escuro .area-modulo,
+body.pagina-painel.tema-escuro .painel-ajustes {
+  background: #373a3f !important;
+  color: #eeeeef !important;
+  border-color: #50545a !important;
+}
+body.pagina-painel.tema-escuro .area-modulo h3,
+body.pagina-painel.tema-escuro .painel-ajustes label,
+body.pagina-painel.tema-escuro .painel-ajustes span {
+  color: #eeeeef !important;
+}
+body.pagina-painel.tema-escuro .menu-inferior {
+  background: #303236 !important;
+  border-top-color: #50545a !important;
+}
+body.pagina-painel.tema-escuro .item-menu {
+  color: #d3d5d8 !important;
+  background: transparent !important;
+}
+body.pagina-painel.tema-escuro .item-menu svg {
+  stroke: currentColor !important;
+  opacity: 1 !important;
+}
+body.pagina-painel.tema-escuro .item-menu span {
+  color: inherit !important;
+  opacity: 1 !important;
+}
+body.pagina-painel.tema-escuro .item-menu.ativo {
+  color: #ffffff !important;
+  background: #50545a !important;
+}
+body.pagina-painel.tema-escuro .painel-ajustes select {
+  background: #292b2f !important;
+  color: #eeeeef !important;
+  border-color: #666a70 !important;
+}
+
+/* Visibilidade consistente da barra inferior em todos os temas */
+body.pagina-painel .menu-inferior {
+  z-index: 1000;
+}
+body.pagina-painel .item-menu,
+body.pagina-painel .item-menu span,
+body.pagina-painel .item-menu svg {
+  visibility: visible !important;
+  opacity: 1 !important;
+}
