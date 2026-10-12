@@ -75,52 +75,64 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     async function renderizarVeiculos() {
-      conteudoModulo.innerHTML = `<div class="frota-acoes"><button type="button" class="frota-botao" id="novo-veiculo">+ Novo veículo</button><button type="button" class="frota-botao frota-secundario" id="atualizar-veiculos">Atualizar</button></div><div id="form-veiculo-area"></div><p class="frota-status" id="status-veiculos">Carregando veículos...</p><div class="frota-tabela-wrap"><table class="frota-tabela"><thead><tr><th>Nome</th><th>Placa</th><th>Renavam</th><th>Ano</th><th>Modelo</th><th>Cor</th></tr></thead><tbody id="lista-veiculos"></tbody></table></div>`;
-      const areaForm = document.getElementById("form-veiculo-area");
-      const status = document.getElementById("status-veiculos");
-      const tbody = document.getElementById("lista-veiculos");
+      conteudoModulo.innerHTML = `<div class="frota-acoes"><button type="button" class="frota-botao" id="novo-veiculo">+ Novo veículo</button><button type="button" class="frota-botao frota-secundario" id="atualizar-veiculos">Atualizar</button></div><div id="form-veiculo-area"></div><p class="frota-status" id="status-veiculos">Carregando veículos...</p><div class="frota-tabela-wrap"><table class="frota-tabela"><thead><tr><th>Nome</th><th>Placa</th><th>Renavam</th><th>Ano</th><th>Modelo</th><th>Cor</th><th>Ações</th></tr></thead><tbody id="lista-veiculos"></tbody></table></div>`;
+      const areaForm = document.getElementById("form-veiculo-area"), status = document.getElementById("status-veiculos"), tbody = document.getElementById("lista-veiculos");
       const carregar = async () => {
         status.textContent = "Carregando veículos...";
         try {
           const veiculos = await carregarVeiculos();
-          tbody.innerHTML = veiculos.map(v => `<tr><td>${escapar(v.name || v.brand || "—")}</td><td>${escapar(v.plate)}</td><td>${escapar(v.renavam || "—")}</td><td>${escapar(v.year || "—")}</td><td>${escapar(v.model || "—")}</td><td>${escapar(v.color || "—")}</td></tr>`).join("");
+          tbody.innerHTML = veiculos.map(v => `<tr><td>${escapar(v.name || v.brand || "—")}</td><td>${escapar(v.plate)}</td><td>${escapar(v.renavam || "—")}</td><td>${escapar(v.year || "—")}</td><td>${escapar(v.model || "—")}</td><td>${escapar(v.color || "—")}</td><td class="frota-acoes-linha"><button type="button" class="frota-icone-acao" data-editar-veiculo="${escapar(v.id)}" title="Editar veículo" aria-label="Editar veículo">✏️</button><button type="button" class="frota-icone-acao frota-excluir" data-excluir-veiculo="${escapar(v.id)}" title="Excluir veículo" aria-label="Excluir veículo">🗑️</button></td></tr>`).join("");
           status.textContent = veiculos.length ? `${veiculos.length} veículo(s) cadastrado(s).` : "Nenhum veículo cadastrado ainda.";
-        } catch (e) {
-          console.error(e); status.textContent = "Não foi possível carregar os veículos. Confira as permissões (RLS) da tabela vehicles.";
-        }
+          tbody.querySelectorAll('[data-editar-veiculo]').forEach(b => b.addEventListener('click', () => abrirForm(veiculos.find(v => v.id === b.dataset.editarVeiculo))));
+          tbody.querySelectorAll('[data-excluir-veiculo]').forEach(b => b.addEventListener('click', async () => {
+            const v = veiculos.find(x => x.id === b.dataset.excluirVeiculo); if (!v || !confirm(`Excluir o veículo ${v.name || v.plate}? Esta ação não poderá ser desfeita.`)) return;
+            const { error } = await supabaseClient.from('vehicles').delete().eq('id', v.id);
+            if (error) { alert('Não foi possível excluir. Verifique se há abastecimentos ou manutenções vinculados a este veículo.'); console.error(error); return; }
+            await carregar();
+          }));
+        } catch (e) { console.error(e); status.textContent = "Não foi possível carregar os veículos. Confira as permissões (RLS) da tabela vehicles."; }
       };
-      const abrirForm = () => {
-        areaForm.innerHTML = `<form id="form-veiculo" class="frota-form"><h4>Cadastro de veículo</h4><div class="frota-campos"><label>Nome<input name="name" required maxlength="120" placeholder="Ex.: Caminhonete 01"></label><label>Renavam<input name="renavam" maxlength="20" placeholder="Renavam"></label><label>Placa<input name="plate" required maxlength="10" placeholder="ABC1D23"></label><label>Ano<input name="year" type="number" min="1900" max="2100" placeholder="2024"></label><label>Modelo<input name="model" required maxlength="100" placeholder="Ex.: S10"></label><label>Cor<input name="color" maxlength="50" placeholder="Branco"></label></div><div class="frota-acoes"><button class="frota-botao" type="submit">Salvar veículo</button><button class="frota-botao frota-secundario" id="cancelar-veiculo" type="button">Cancelar</button></div><p class="frota-status" id="form-veiculo-status"></p></form>`;
+      const abrirForm = (veiculo = null) => {
+        areaForm.innerHTML = `<form id="form-veiculo" class="frota-form"><h4>${veiculo ? 'Editar veículo' : 'Cadastro de veículo'}</h4><div class="frota-campos"><label>Nome<input name="name" required maxlength="120" placeholder="Ex.: Caminhonete 01"></label><label>Renavam<input name="renavam" maxlength="20" placeholder="Renavam"></label><label>Placa<input name="plate" required maxlength="10" placeholder="ABC1D23"></label><label>Ano<input name="year" type="number" min="1900" max="2100" placeholder="2024"></label><label>Modelo<input name="model" required maxlength="100" placeholder="Ex.: S10"></label><label>Cor<input name="color" maxlength="50" placeholder="Branco"></label></div><div class="frota-acoes"><button class="frota-botao" type="submit">${veiculo ? 'Salvar alterações' : 'Salvar veículo'}</button><button class="frota-botao frota-secundario" id="cancelar-veiculo" type="button">Cancelar</button></div><p class="frota-status" id="form-veiculo-status"></p></form>`;
+        const form = document.getElementById('form-veiculo');
+        if (veiculo) for (const k of ['name','renavam','plate','year','model','color']) form.elements[k].value = veiculo[k] ?? '';
         document.getElementById("cancelar-veiculo").addEventListener("click", () => areaForm.replaceChildren());
-        document.getElementById("form-veiculo").addEventListener("submit", async (event) => {
-          event.preventDefault();
-          const form = event.currentTarget;
-          const fd = new FormData(form);
-          const aviso = document.getElementById("form-veiculo-status");
-          const placa = String(fd.get("plate") || "").trim().toUpperCase();
-          const dados = {
-            name: String(fd.get("name") || "").trim(),
-            renavam: String(fd.get("renavam") || "").trim() || null,
-            plate: placa,
-            year: fd.get("year") ? Number(fd.get("year")) : null,
-            model: String(fd.get("model") || "").trim(),
-            color: String(fd.get("color") || "").trim() || null,
-            status: "ativo"
-          };
-          const submit = form.querySelector('[type="submit"]'); submit.disabled = true; aviso.textContent = "Salvando...";
-          try {
-            const { error } = await supabaseClient.from("vehicles").insert(dados);
-            if (error) throw error;
-            areaForm.replaceChildren(); await carregar();
-          } catch (e) {
-            console.error(e); aviso.textContent = e.code === "23505" ? "Já existe um veículo com essa placa." : "Não foi possível salvar. Verifique as políticas RLS e os campos obrigatórios da tabela vehicles.";
-            submit.disabled = false;
-          }
+        form.addEventListener("submit", async (event) => {
+          event.preventDefault(); const fd = new FormData(form), aviso = document.getElementById("form-veiculo-status"), submit = form.querySelector('[type="submit"]');
+          const dados = { name:String(fd.get('name')||'').trim(), renavam:String(fd.get('renavam')||'').trim()||null, plate:String(fd.get('plate')||'').trim().toUpperCase(), year:fd.get('year')?Number(fd.get('year')):null, model:String(fd.get('model')||'').trim(), color:String(fd.get('color')||'').trim()||null, status:veiculo?.status || 'ativo' };
+          submit.disabled = true; aviso.textContent = 'Salvando...';
+          try { const result = veiculo ? await supabaseClient.from('vehicles').update(dados).eq('id',veiculo.id) : await supabaseClient.from('vehicles').insert(dados); if (result.error) throw result.error; areaForm.replaceChildren(); await carregar(); }
+          catch(e) { console.error(e); aviso.textContent = e.code === '23505' ? 'Já existe um veículo com essa placa.' : 'Não foi possível salvar. Confira as permissões RLS e as colunas da tabela vehicles.'; submit.disabled = false; }
         });
       };
-      document.getElementById("novo-veiculo").addEventListener("click", abrirForm);
-      document.getElementById("atualizar-veiculos").addEventListener("click", carregar);
-      await carregar();
+      document.getElementById("novo-veiculo").addEventListener("click", () => abrirForm());
+      document.getElementById("atualizar-veiculos").addEventListener("click", carregar); await carregar();
+    }
+
+    async function carregarMotoristas() {
+      const { data, error } = await supabaseClient.from('drivers').select('*').order('name', {ascending:true});
+      if (error) throw error; return data || [];
+    }
+
+    async function renderizarMotoristas() {
+      conteudoModulo.innerHTML = `<div class="frota-acoes"><button type="button" class="frota-botao" id="novo-motorista">+ Novo motorista</button><button type="button" class="frota-botao frota-secundario" id="atualizar-motoristas">Atualizar</button></div><div id="form-motorista-area"></div><p class="frota-status" id="status-motoristas">Carregando motoristas...</p><div class="frota-tabela-wrap"><table class="frota-tabela"><thead><tr><th>Nome</th><th>CNH</th><th>Telefone</th><th>Ações</th></tr></thead><tbody id="lista-motoristas"></tbody></table></div>`;
+      const area = document.getElementById('form-motorista-area'), status = document.getElementById('status-motoristas'), tbody = document.getElementById('lista-motoristas');
+      const carregar = async () => {
+        try {
+          const motoristas = await carregarMotoristas();
+          tbody.innerHTML = motoristas.map(m => `<tr><td>${escapar(m.name || m.full_name || '—')}</td><td>${escapar(m.license_number || m.license || '—')}</td><td>${escapar(m.phone || '—')}</td><td class="frota-acoes-linha"><button type="button" class="frota-icone-acao" data-editar-motorista="${escapar(m.id)}" title="Editar motorista" aria-label="Editar motorista">✏️</button><button type="button" class="frota-icone-acao frota-excluir" data-excluir-motorista="${escapar(m.id)}" title="Excluir motorista" aria-label="Excluir motorista">🗑️</button></td></tr>`).join('');
+          status.textContent = motoristas.length ? `${motoristas.length} motorista(s) cadastrado(s).` : 'Nenhum motorista cadastrado ainda.';
+          tbody.querySelectorAll('[data-editar-motorista]').forEach(b => b.addEventListener('click',()=>abrirForm(motoristas.find(m=>m.id===b.dataset.editarMotorista))));
+          tbody.querySelectorAll('[data-excluir-motorista]').forEach(b => b.addEventListener('click',async()=>{const m=motoristas.find(x=>x.id===b.dataset.excluirMotorista);if(!m||!confirm(`Excluir o motorista ${m.name||m.full_name}?`))return;const {error}=await supabaseClient.from('drivers').delete().eq('id',m.id);if(error){alert('Não foi possível excluir. Se o motorista já estiver associado a abastecimentos, mantenha o cadastro para preservar o histórico.');console.error(error);return;}await carregar();}));
+        } catch(e) { console.error(e); status.textContent = 'Não foi possível carregar motoristas. Confirme se a tabela drivers existe e as permissões RLS estão configuradas.'; }
+      };
+      const abrirForm = (motorista=null) => {
+        area.innerHTML = `<form id="form-motorista" class="frota-form"><h4>${motorista?'Editar motorista':'Cadastro de motorista'}</h4><div class="frota-campos"><label>Nome completo<input name="name" required maxlength="150" placeholder="Nome do motorista"></label><label>CNH<input name="license_number" maxlength="30" placeholder="Número da CNH"></label><label>Telefone<input name="phone" maxlength="30" placeholder="Telefone para contato"></label></div><div class="frota-acoes"><button class="frota-botao" type="submit">${motorista?'Salvar alterações':'Salvar motorista'}</button><button class="frota-botao frota-secundario" id="cancelar-motorista" type="button">Cancelar</button></div><p class="frota-status" id="form-motorista-status"></p></form>`;
+        const form=document.getElementById('form-motorista'); if(motorista){form.elements.name.value=motorista.name||motorista.full_name||'';form.elements.license_number.value=motorista.license_number||motorista.license||'';form.elements.phone.value=motorista.phone||'';}
+        document.getElementById('cancelar-motorista').addEventListener('click',()=>area.replaceChildren());
+        form.addEventListener('submit',async e=>{e.preventDefault();const fd=new FormData(form),aviso=document.getElementById('form-motorista-status'),submit=form.querySelector('[type="submit"]');const dados={name:String(fd.get('name')||'').trim(),license_number:String(fd.get('license_number')||'').trim()||null,phone:String(fd.get('phone')||'').trim()||null};submit.disabled=true;aviso.textContent='Salvando...';try{const result=motorista?await supabaseClient.from('drivers').update(dados).eq('id',motorista.id):await supabaseClient.from('drivers').insert(dados);if(result.error)throw result.error;area.replaceChildren();await carregar();}catch(err){console.error(err);aviso.textContent='Não foi possível salvar. A tabela drivers precisa ter as colunas name, license_number e phone e permitir gravação pelas políticas RLS.';submit.disabled=false;}});
+      };
+      document.getElementById('novo-motorista').addEventListener('click',()=>abrirForm()); document.getElementById('atualizar-motoristas').addEventListener('click',carregar); await carregar();
     }
 
     async function recalcularConsumoVeiculo(vehicleId) {
@@ -147,21 +159,23 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     async function renderizarAbastecimentos() {
-      conteudoModulo.innerHTML = `<div class="frota-acoes"><button type="button" class="frota-botao" id="novo-abastecimento">+ Novo abastecimento</button><button type="button" class="frota-botao frota-secundario" id="atualizar-abastecimentos">Atualizar</button></div><div id="form-abastecimento-area"></div><p class="frota-status" id="status-abastecimentos">Carregando abastecimentos...</p><div class="frota-tabela-wrap"><table class="frota-tabela"><thead><tr><th>Data</th><th>Veículo</th><th>KM</th><th>Litros</th><th>Valor</th><th>Consumo (km/l)</th></tr></thead><tbody id="lista-abastecimentos"></tbody></table></div>`;
+      conteudoModulo.innerHTML = `<div class="frota-acoes"><button type="button" class="frota-botao" id="novo-abastecimento">+ Novo abastecimento</button><button type="button" class="frota-botao frota-secundario" id="atualizar-abastecimentos">Atualizar</button></div><div id="form-abastecimento-area"></div><p class="frota-status" id="status-abastecimentos">Carregando abastecimentos...</p><div class="frota-tabela-wrap"><table class="frota-tabela"><thead><tr><th>Data</th><th>Veículo</th><th>KM</th><th>Litros</th><th>Valor</th><th>Motorista</th><th>Consumo (km/l)</th></tr></thead><tbody id="lista-abastecimentos"></tbody></table></div>`;
       const areaForm = document.getElementById("form-abastecimento-area");
       const status = document.getElementById("status-abastecimentos");
       const tbody = document.getElementById("lista-abastecimentos");
-      let veiculos = [];
+      let veiculos = [], motoristas = [];
       try { veiculos = await carregarVeiculos(); } catch (e) { console.error(e); }
+      try { motoristas = await carregarMotoristas(); } catch (e) { console.error('Motoristas não carregados:', e); }
       const nomes = new Map(veiculos.map(v => [v.id, v.name || v.brand || v.plate]));
       const carregar = async () => {
         status.textContent = "Carregando abastecimentos...";
         try {
           const { data, error } = await supabaseClient.from("fuel_entries")
-            .select("id, vehicle_id, entry_date, odometer, liters, total_value, consumption")
+            .select("id, vehicle_id, driver_id, entry_date, odometer, liters, total_value, consumption")
             .order("entry_date", { ascending: false }).order("created_at", { ascending: false });
           if (error) throw error;
-          tbody.innerHTML = (data || []).map(r => `<tr><td>${escapar(r.entry_date)}</td><td>${escapar(nomes.get(r.vehicle_id) || "Veículo não localizado")}</td><td>${formatarNumero(r.odometer, 0)}</td><td>${formatarNumero(r.liters)}</td><td>R$ ${formatarNumero(r.total_value)}</td><td>${r.consumption == null ? "INÍCIO" : formatarNumero(r.consumption)}</td></tr>`).join("");
+          const nomesMotoristas = new Map(motoristas.map(m => [m.id, m.name || m.full_name || "Motorista"]));
+          tbody.innerHTML = (data || []).map(r => `<tr><td>${escapar(r.entry_date)}</td><td>${escapar(nomes.get(r.vehicle_id) || "Veículo não localizado")}</td><td>${formatarNumero(r.odometer, 0)}</td><td>${formatarNumero(r.liters)}</td><td>R$ ${formatarNumero(r.total_value)}</td><td>${escapar(nomesMotoristas.get(r.driver_id) || "—")}</td><td>${r.consumption == null ? "INÍCIO" : formatarNumero(r.consumption)}</td></tr>`).join("");
           status.textContent = data?.length ? `${data.length} abastecimento(s) registrado(s).` : "Nenhum abastecimento cadastrado ainda.";
         } catch (e) {
           console.error(e); status.textContent = "Não foi possível carregar abastecimentos. Confira as permissões RLS da tabela fuel_entries.";
@@ -169,14 +183,14 @@ document.addEventListener("DOMContentLoaded", async () => {
       };
       const abrirForm = () => {
         if (!veiculos.length) { areaForm.innerHTML = `<p class="frota-status">Cadastre primeiro um veículo na aba Veículos.</p>`; return; }
-        areaForm.innerHTML = `<form id="form-abastecimento" class="frota-form"><h4>Novo abastecimento</h4><div class="frota-campos"><label>Veículo<select name="vehicle_id" required>${veiculos.map(v => `<option value="${escapar(v.id)}">${escapar(v.name || v.brand || v.plate)} — ${escapar(v.plate)}</option>`).join("")}</select></label><label>Data<input name="entry_date" type="date" required></label><label>KM atual<input name="odometer" type="number" min="0" step="0.1" required></label><label>Litros atuais<input name="liters" type="number" min="0.001" step="0.001" required></label><label>Valor total (R$)<input name="total_value" type="number" min="0" step="0.01" required></label></div><div class="frota-acoes"><button class="frota-botao" type="submit">Salvar abastecimento</button><button class="frota-botao frota-secundario" id="cancelar-abastecimento" type="button">Cancelar</button></div><p class="frota-status" id="form-abastecimento-status"></p></form>`;
+        areaForm.innerHTML = `<form id="form-abastecimento" class="frota-form"><h4>Novo abastecimento</h4><div class="frota-campos"><label>Veículo<select name="vehicle_id" required>${veiculos.map(v => `<option value="${escapar(v.id)}">${escapar(v.name || v.brand || v.plate)} — ${escapar(v.plate)}</option>`).join("")}</select></label><label>Data<input name="entry_date" type="date" required></label><label>KM atual<input name="odometer" type="number" min="0" step="0.1" required></label><label>Litros atuais<input name="liters" type="number" min="0.001" step="0.001" required></label><label>Valor total (R$)<input name="total_value" type="number" min="0" step="0.01" required></label><label>Motorista<select name="driver_id" required><option value="">Selecione o motorista</option>${motoristas.map(m => `<option value="${escapar(m.id)}">${escapar(m.name || m.full_name || "Motorista")}</option>`).join("")}</select></label></div><div class="frota-acoes"><button class="frota-botao" type="submit">Salvar abastecimento</button><button class="frota-botao frota-secundario" id="cancelar-abastecimento" type="button">Cancelar</button></div><p class="frota-status" id="form-abastecimento-status"></p></form>`;
         const dateInput = areaForm.querySelector('[name="entry_date"]');
         dateInput.value = new Date().toLocaleDateString("en-CA");
         document.getElementById("cancelar-abastecimento").addEventListener("click", () => areaForm.replaceChildren());
         document.getElementById("form-abastecimento").addEventListener("submit", async (event) => {
           event.preventDefault(); const form = event.currentTarget; const fd = new FormData(form);
           const aviso = document.getElementById("form-abastecimento-status"); const submit = form.querySelector('[type="submit"]');
-          const dados = { vehicle_id: fd.get("vehicle_id"), entry_date: fd.get("entry_date"), odometer: Number(fd.get("odometer")), liters: Number(fd.get("liters")), total_value: Number(fd.get("total_value")), created_by: usuario.id };
+          const dados = { vehicle_id: fd.get("vehicle_id"), driver_id: fd.get("driver_id"), entry_date: fd.get("entry_date"), odometer: Number(fd.get("odometer")), liters: Number(fd.get("liters")), total_value: Number(fd.get("total_value")), created_by: usuario.id };
           submit.disabled = true; aviso.textContent = "Salvando e recalculando consumo...";
           try {
             const { error } = await supabaseClient.from("fuel_entries").insert(dados);
@@ -212,6 +226,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         else botao.removeAttribute("aria-current");
       });
       if (nomeModulo === "veiculos") renderizarVeiculos();
+      if (nomeModulo === "motoristas") renderizarMotoristas();
       if (nomeModulo === "abastecimentos") renderizarAbastecimentos();
     }
 
