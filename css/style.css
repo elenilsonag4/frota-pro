@@ -926,3 +926,64 @@ body.pagina-painel .item-menu svg {
   visibility: visible !important;
   opacity: 1 !important;
 }
+
+
+/* Refinamento visual dos temas Claro e Verde */
+body.pagina-painel.tema-verde {
+  --green: #12352b;
+  --green-light: #1e5946;
+  --background: #f3f6f4;
+  --surface: #ffffff;
+  --text: #17251f;
+  --muted: #68766f;
+  --border: #dce5df;
+  background: #f3f6f4 !important;
+  color: #17251f !important;
+}
+body.pagina-painel.tema-verde .painel-topo {
+  background: #12352b !important;
+  border-bottom-color: #e5b94f !important;
+}
+body.pagina-painel.tema-verde .item-menu.ativo {
+  color: #12352b !important;
+  background: #e8efeb !important;
+}
+
+body.pagina-painel.tema-claro {
+  --green: #e8e0d2;
+  --green-light: #d8cdbb;
+  --background: #f8f7f4;
+  --surface: #ffffff;
+  --text: #343434;
+  --muted: #595959;
+  --border: #dedbd5;
+  background: #f8f7f4 !important;
+  color: #343434 !important;
+}
+body.pagina-painel.tema-claro .painel-topo {
+  background: #ded5c5 !important;
+  color: #292929 !important;
+  border-bottom-color: #b8ad9c !important;
+}
+body.pagina-painel.tema-claro .painel-marca p,
+body.pagina-painel.tema-claro #botao-sair,
+body.pagina-painel.tema-claro .botao-ajustes {
+  color: #292929 !important;
+}
+body.pagina-painel.tema-claro .area-modulo h3,
+body.pagina-painel.tema-claro .area-modulo h2,
+body.pagina-painel.tema-claro .painel-conteudo h1,
+body.pagina-painel.tema-claro .painel-conteudo h2,
+body.pagina-painel.tema-claro .painel-conteudo h3 {
+  color: #292929 !important;
+  opacity: 1 !important;
+}
+body.pagina-painel.tema-claro .painel-ajustes {
+  border-radius: 16px !important;
+}
+body.pagina-painel .painel-ajustes {
+  border-radius: 16px !important;
+}
+body.pagina-painel .painel-ajustes select {
+  border-radius: 9px !important;
+}
