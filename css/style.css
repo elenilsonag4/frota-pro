@@ -987,3 +987,24 @@ body.pagina-painel .painel-ajustes {
 body.pagina-painel .painel-ajustes select {
   border-radius: 9px !important;
 }
+
+
+/* Formulários e tabelas dos módulos Veículos e Abastecimentos */
+.frota-acoes { display:flex; flex-wrap:wrap; gap:8px; margin: 10px 0 14px; }
+.frota-botao { border:0; border-radius:10px; padding:10px 14px; background:var(--green,#1e5946); color:#fff; font:inherit; font-weight:600; cursor:pointer; }
+.frota-botao:disabled { opacity:.6; cursor:wait; }
+.frota-botao.frota-secundario { background:var(--surface,#fff); color:var(--text,#25332d); border:1px solid var(--border,#dce5df); }
+.frota-form { margin:12px 0 16px; padding:14px; border:1px solid var(--border,#dce5df); border-radius:14px; background:var(--surface,#fff); }
+.frota-form h4 { margin:0 0 12px; color:var(--green,#12352b); }
+.frota-campos { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+.frota-campos label { display:flex; flex-direction:column; gap:5px; font-size:.92em; font-weight:600; }
+.frota-campos input, .frota-campos select { box-sizing:border-box; width:100%; min-width:0; padding:10px; border:1px solid var(--border,#dce5df); border-radius:9px; background:var(--surface,#fff); color:var(--text,#25332d); font:inherit; }
+.frota-status { color:var(--muted,#68766f); font-size:.9em; margin:10px 0; }
+.frota-tabela-wrap { max-width:100%; overflow-x:auto; border:1px solid var(--border,#dce5df); border-radius:10px; }
+.frota-tabela { width:100%; border-collapse:collapse; font-size:.9em; white-space:nowrap; }
+.frota-tabela th, .frota-tabela td { text-align:left; padding:9px 10px; border-bottom:1px solid var(--border,#dce5df); }
+.frota-tabela th { background:var(--green,#1e5946); color:#fff; }
+.frota-tabela tr:last-child td { border-bottom:0; }
+@media(max-width:600px) { .frota-campos { grid-template-columns:1fr; } .frota-form { padding:11px; } }
+body.tema-escuro .frota-form, body.tema-escuro .frota-campos input, body.tema-escuro .frota-campos select, body.tema-escuro .frota-botao.frota-secundario { background:#292d31; color:#f2f2f2; }
+body.tema-escuro .frota-tabela th { background:#454b50; }
