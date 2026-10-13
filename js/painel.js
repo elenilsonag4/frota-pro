@@ -73,11 +73,11 @@ document.addEventListener("DOMContentLoaded", async () => {
       "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
     }[c]));
 
-    function abrirJanelaRelatorio(modulo) {
+    function abrirJanelaRelatorio(modulo, modoInicial = null) {
       document.getElementById('frota-modal-relatorio')?.remove();
       const modal=document.createElement('div'); modal.id='frota-modal-relatorio'; modal.className='frota-modal-relatorio';
       const revisao=modulo==='revisao';
-      modal.innerHTML=`<div class="frota-modal-cartao" role="dialog" aria-modal="true" aria-labelledby="titulo-modal-relatorio"><button type="button" class="frota-modal-fechar" aria-label="Fechar">×</button><h3 id="titulo-modal-relatorio">Relatório — ${escapar(modulos[modulo]?.titulo||modulo)}</h3>${revisao?'<label>Tipo de revisão<select id="relatorio-tipo-revisao"><option value="Preventiva">Preventiva</option><option value="Corretiva">Corretiva</option><option value="Ambos">Ambos</option></select></label>':''}<div class="frota-modal-acoes"><button type="button" class="frota-botao" data-relatorio="geral">Geral</button><button type="button" class="frota-botao frota-secundario" data-relatorio="seletivo">Seletivo</button></div><p class="frota-status">Geral inclui todos os veículos. Seletivo permite escolher um veículo.</p><div id="relatorio-selecao-veiculo" hidden><label>Veículo<select id="relatorio-veiculo"><option value="">Carregando veículos…</option></select></label><button type="button" class="frota-botao" id="confirmar-relatorio-seletivo">Gerar PDF</button></div></div>`;
+      modal.innerHTML=`<div class="frota-modal-cartao" role="dialog" aria-modal="true" aria-labelledby="titulo-modal-relatorio"><button type="button" class="frota-modal-fechar" aria-label="Fechar">×</button><h3 id="titulo-modal-relatorio">Relatório — ${escapar(modulos[modulo]?.titulo||modulo)}</h3>${revisao?'<label>Tipo de revisão<select id="relatorio-tipo-revisao"><option value="Preventiva">Preventiva</option><option value="Corretiva">Corretiva</option><option value="Ambos">Ambos</option></select></label>':''}${modoInicial ? '' : '<div class="frota-modal-acoes"><button type="button" class="frota-botao" data-relatorio="geral">Geral</button><button type="button" class="frota-botao frota-secundario" data-relatorio="seletivo">Seletivo</button></div>'}<p class="frota-status">${modoInicial==='seletivo'?'Selecione o veículo para gerar o relatório seletivo.': 'Geral inclui todos os veículos. Seletivo permite escolher um veículo.'}</p><div id="relatorio-selecao-veiculo" ${modoInicial==='seletivo'?'':'hidden'}><label>Veículo<select id="relatorio-veiculo"><option value="">Carregando veículos…</option></select></label><button type="button" class="frota-botao" id="confirmar-relatorio-seletivo">Gerar PDF</button></div></div>`;
       document.body.appendChild(modal);
       const fechar=()=>modal.remove(); modal.querySelector('.frota-modal-fechar').onclick=fechar; modal.addEventListener('click',e=>{if(e.target===modal)fechar()});
       async function gerar(tipo,veiculoId=null){
@@ -100,8 +100,10 @@ document.addEventListener("DOMContentLoaded", async () => {
           const w=window.open('','_blank'); if(!w)throw new Error('O navegador bloqueou a janela do relatório. Permita pop-ups para gerar o PDF.'); w.document.open();w.document.write(html);w.document.close();fechar();
         }catch(e){console.error(e);status.textContent='Não foi possível gerar o relatório: '+e.message}
       }
-      modal.querySelector('[data-relatorio="geral"]').onclick=()=>gerar('geral');
-      modal.querySelector('[data-relatorio="seletivo"]').onclick=async()=>{const area=modal.querySelector('#relatorio-selecao-veiculo');area.hidden=false;const sel=modal.querySelector('#relatorio-veiculo');try{const vs=await carregarVeiculos();sel.innerHTML='<option value="">Selecione um veículo</option>'+vs.map(v=>`<option value="${escapar(v.id)}">${escapar(v.name||v.plate||'Veículo')}</option>`).join('')}catch(e){sel.innerHTML='<option value="">Erro ao carregar veículos</option>'} };
+      const prepararSeletivo=async()=>{const area=modal.querySelector('#relatorio-selecao-veiculo');area.hidden=false;const sel=modal.querySelector('#relatorio-veiculo');try{const vs=await carregarVeiculos();sel.innerHTML='<option value="">Selecione um veículo</option>'+vs.map(v=>`<option value="${escapar(v.id)}">${escapar(v.name||v.plate||'Veículo')}</option>`).join('')}catch(e){sel.innerHTML='<option value="">Erro ao carregar veículos</option>'}};
+      const btnGeral=modal.querySelector('[data-relatorio="geral"]');if(btnGeral)btnGeral.onclick=()=>gerar('geral');
+      const btnSeletivo=modal.querySelector('[data-relatorio="seletivo"]');if(btnSeletivo)btnSeletivo.onclick=prepararSeletivo;
+      if(modoInicial==='geral')gerar('geral');else if(modoInicial==='seletivo')prepararSeletivo();
       modal.querySelector('#confirmar-relatorio-seletivo').onclick=()=>{const id=modal.querySelector('#relatorio-veiculo').value;if(!id){modal.querySelector('.frota-status').textContent='Selecione um veículo.';return}gerar('seletivo',id)};
     }
 
@@ -470,7 +472,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             destino.innerHTML=rows.length?`<table class="frota-tabela"><thead><tr>${keys.map(k=>`<th>${escapar(fmt(k))}</th>`).join('')}</tr></thead><tbody>${rows.map(r=>`<tr>${keys.map(k=>`<td>${escapar(cell(r,k))}</td>`).join('')}</tr>`).join('')}</tbody></table>`:'<p>Nenhum registro encontrado.</p>';
             statusTabela.textContent=`${rows.length} registro(s).`;
           }catch(e){console.error(e);statusTabela.textContent='Não foi possível carregar a tabela: '+e.message;}
-          document.getElementById('relatorio-pdf-tipo').onchange=e=>{const tipo=e.target.value;if(tipo){abrirJanelaRelatorio(modulo);setTimeout(()=>document.querySelector(`#frota-modal-relatorio [data-relatorio=\"${tipo}\"]`)?.click(),0);}e.target.value='';};
+          document.getElementById('relatorio-pdf-tipo').onchange=e=>{const tipo=e.target.value;if(tipo)abrirJanelaRelatorio(modulo,tipo);e.target.value='';};
         });
       });
       let dados=null;
