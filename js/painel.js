@@ -105,8 +105,6 @@ document.addEventListener("DOMContentLoaded", async () => {
       modal.querySelector('#confirmar-relatorio-seletivo').onclick=()=>{const id=modal.querySelector('#relatorio-veiculo').value;if(!id){modal.querySelector('.frota-status').textContent='Selecione um veículo.';return}gerar('seletivo',id)};
     }
 
-    function botaoRelatorio(modulo) { return `<button type="button" class="frota-botao frota-secundario" data-abrir-relatorio="${modulo}" title="Gerar relatório" aria-label="Gerar relatório">Relatório</button>`; }
-    function vincularBotoesRelatorio(raiz=conteudoModulo){raiz.querySelectorAll('[data-abrir-relatorio]').forEach(b=>b.onclick=()=>abrirJanelaRelatorio(b.dataset.abrirRelatorio));}
 
     async function carregarVeiculos() {
       const { data, error } = await supabaseClient.from("vehicles")
@@ -218,8 +216,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     async function renderizarAbastecimentos() {
-      conteudoModulo.innerHTML = `<div class="frota-acoes"><button type="button" class="frota-botao" id="novo-abastecimento">+ Novo abastecimento</button><button type="button" class="frota-botao frota-secundario frota-atualizar-icone" id="atualizar-abastecimentos" title="Atualizar" aria-label="Atualizar">↻</button>${botaoRelatorio('abastecimentos')}</div><div id="form-abastecimento-area"></div><p class="frota-status" id="status-abastecimentos">Carregando abastecimentos...</p><div class="frota-tabela-wrap"><table class="frota-tabela"><thead><tr><th>Data</th><th>Veículo</th><th>KM</th><th>Litros</th><th>Valor</th><th>Motorista</th><th>Consumo (km/l)</th><th>Ações</th></tr></thead><tbody id="lista-abastecimentos"></tbody></table></div>`;
-      vincularBotoesRelatorio();
+      conteudoModulo.innerHTML = `<div class="frota-acoes"><button type="button" class="frota-botao" id="novo-abastecimento">+ Novo abastecimento</button><button type="button" class="frota-botao frota-secundario frota-atualizar-icone" id="atualizar-abastecimentos" title="Atualizar" aria-label="Atualizar">↻</button></div><div id="form-abastecimento-area"></div><p class="frota-status" id="status-abastecimentos">Carregando abastecimentos...</p><div class="frota-tabela-wrap"><table class="frota-tabela"><thead><tr><th>Data</th><th>Veículo</th><th>KM</th><th>Litros</th><th>Valor</th><th>Motorista</th><th>Consumo (km/l)</th><th>Ações</th></tr></thead><tbody id="lista-abastecimentos"></tbody></table></div>`;
       const areaForm = document.getElementById("form-abastecimento-area");
       const status = document.getElementById("status-abastecimentos");
       const tbody = document.getElementById("lista-abastecimentos");
@@ -315,9 +312,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         ], colunas:["revision_type","vehicle_id","description","due_date","due_odometer","completed_date","completed_odometer","status","total_value"] }
       }[tipo];
       if (!config) return;
-      conteudoModulo.innerHTML = `<div class="frota-acoes">${tipo==="revisao" ? `<span class="frota-acoes-espacador"></span><label class="frota-filtro-revisao" title="Filtrar revisões">⚲ <select id="filtro-tipo-revisao" aria-label="Filtrar tipo de revisão"><option value="Ambos">Ambos</option><option value="Preventiva">Preventiva</option><option value="Corretiva">Corretiva</option></select></label>` : ""}<button type="button" class="frota-botao" id="novo-manutencao">+ Novo ${config.plural}</button><button type="button" class="frota-botao frota-secundario frota-atualizar-icone" id="atualizar-manutencao" title="Atualizar" aria-label="Atualizar">↻</button>${botaoRelatorio(tipo)}</div><div id="form-manutencao-area"></div><p class="frota-status" id="status-manutencao">Carregando...</p><div class="frota-tabela-wrap"><table class="frota-tabela"><thead><tr><th>Data</th><th>Veículo</th><th>Descrição</th><th>KM</th><th>Valor</th><th>Situação</th><th>Ações</th></tr></thead><tbody id="lista-manutencao"></tbody></table></div>`;
-      vincularBotoesRelatorio();
-      let tipoFiltro = "Ambos";
+      conteudoModulo.innerHTML = `<div class="frota-acoes"><button type="button" class="frota-botao" id="novo-manutencao">+ Novo ${config.plural}</button><button type="button" class="frota-botao frota-secundario frota-atualizar-icone" id="atualizar-manutencao" title="Atualizar" aria-label="Atualizar">↻</button></div><div id="form-manutencao-area"></div><p class="frota-status" id="status-manutencao">Carregando...</p><div class="frota-tabela-wrap"><table class="frota-tabela"><thead><tr><th>Data</th><th>Veículo</th><th>Descrição</th><th>KM</th><th>Valor</th><th>Situação</th><th>Ações</th></tr></thead><tbody id="lista-manutencao"></tbody></table></div>`;
       const area=document.getElementById("form-manutencao-area"), status=document.getElementById("status-manutencao"), tbody=document.getElementById("lista-manutencao");
       let veiculos=[];
       try { veiculos=await carregarVeiculos(); } catch(e) { status.textContent="Não foi possível carregar veículos."; return; }
@@ -327,7 +322,6 @@ document.addEventListener("DOMContentLoaded", async () => {
       async function carregar() {
         status.textContent="Carregando...";
         let q=supabaseClient.from(config.tabela).select("*").order(tipo==="mecanica"?"service_date":tipo==="revisao"?"due_date":"created_at",{ascending:false});
-        if(tipo==="revisao" && tipoFiltro!=="Ambos") q=q.eq("revision_type",tipoFiltro);
         const {data,error}=await q;
         if(error){status.textContent=`Erro ao carregar: ${error.message}`;return;}
         tbody.innerHTML=(data||[]).map(r=>`<tr><td>${escapar(fmtData(r.service_date||r.due_date||r.completed_date))}</td><td>${escapar(nomes.get(r.vehicle_id)||"—")}</td><td>${escapar(r.description||"—")}</td><td>${escapar(r.odometer??r.completed_odometer??r.due_odometer??"—")}</td><td>${escapar(valor(r.total_value))}</td><td>${escapar(r.status||"—")}</td><td class="frota-acoes-linha"><button type="button" class="frota-icone-acao" data-edit="${escapar(r.id)}" title="Editar">✏️</button><button type="button" class="frota-icone-acao frota-excluir" data-del="${escapar(r.id)}" title="Excluir">🗑️</button></td></tr>`).join("");
@@ -335,7 +329,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       }
       function abrirForm(registro=null){
         const campos=config.campos.map(([key,label,type,required])=>{
-          const val=registro?.[key]??(key==="status"?"Pendente":key==="revision_type"?tipoFiltro:"");
+          const val=registro?.[key]??(key==="status"?"Pendente":key==="revision_type"?"Preventiva":"");
           let input="";
           if(type==="vehicle") input=`<select name="${key}" required><option value="">Selecione</option>${veiculos.map(v=>`<option value="${escapar(v.id)}" ${val===v.id?"selected":""}>${escapar(v.name||v.brand||v.plate||"Veículo")}</option>`).join("")}</select>`;
           else if(type==="select") input=`<select name="${key}" ${required?"required":""}><option value="Pendente" ${val==="Pendente"?"selected":""}>Pendente</option><option value="Em andamento" ${val==="Em andamento"?"selected":""}>Em andamento</option><option value="Concluído" ${val==="Concluído"?"selected":""}>Concluído</option><option value="Cancelado" ${val==="Cancelado"?"selected":""}>Cancelado</option></select>`;
@@ -357,13 +351,12 @@ document.addEventListener("DOMContentLoaded", async () => {
       }
       document.getElementById("novo-manutencao").onclick=()=>abrirForm();
       document.getElementById("atualizar-manutencao").onclick=carregar;
-      const filtroRevisao=document.getElementById("filtro-tipo-revisao"); if(filtroRevisao) filtroRevisao.onchange=()=>{tipoFiltro=filtroRevisao.value;carregar();};
       tbody.onclick=async e=>{const edit=e.target.closest("[data-edit]"), del=e.target.closest("[data-del]"); if(edit){const {data,error}=await supabaseClient.from(config.tabela).select("*").eq("id",edit.dataset.edit).single();if(error){alert(error.message);return;}abrirForm(data);} if(del&&confirm("Confirma excluir este registro?")){const {error}=await supabaseClient.from(config.tabela).delete().eq("id",del.dataset.del);if(error)alert(`Não foi possível excluir: ${error.message}`);else carregar();}};
       await carregar();
     }
 
     async function renderizarPecas() {
-      conteudoModulo.innerHTML=`<div class="frota-acoes"><button class="frota-botao" id="nova-peca" type="button">+ Nova peça</button><button class="frota-botao frota-secundario frota-atualizar-icone" id="atualizar-pecas" type="button" title="Atualizar" aria-label="Atualizar">↻</button>${botaoRelatorio('pecas')}</div><div id="form-peca-area"></div><p class="frota-status" id="status-pecas">Carregando...</p><div class="frota-tabela-wrap"><table class="frota-tabela"><thead><tr><th>Código</th><th>Peça</th><th>Unidade</th><th>Estoque mínimo</th><th>Ativa</th><th>Ações</th></tr></thead><tbody id="lista-pecas"></tbody></table></div><p>Esta tela cadastra o catálogo de peças. O histórico de instalação por veículo será implementado separadamente para não misturar estoque com serviços.</p>`;
+      conteudoModulo.innerHTML=`<div class="frota-acoes"><button class="frota-botao" id="nova-peca" type="button">+ Nova peça</button><button class="frota-botao frota-secundario frota-atualizar-icone" id="atualizar-pecas" type="button" title="Atualizar" aria-label="Atualizar">↻</button></div><div id="form-peca-area"></div><p class="frota-status" id="status-pecas">Carregando...</p><div class="frota-tabela-wrap"><table class="frota-tabela"><thead><tr><th>Código</th><th>Peça</th><th>Unidade</th><th>Estoque mínimo</th><th>Ativa</th><th>Ações</th></tr></thead><tbody id="lista-pecas"></tbody></table></div><p>Esta tela cadastra o catálogo de peças. O histórico de instalação por veículo será implementado separadamente para não misturar estoque com serviços.</p>`;
       const area=document.getElementById("form-peca-area"),status=document.getElementById("status-pecas"),tbody=document.getElementById("lista-pecas");
       async function carregar(){const {data,error}=await supabaseClient.from("parts").select("*").order("name");if(error){status.textContent=`Erro ao carregar: ${error.message}`;return;}tbody.innerHTML=(data||[]).map(p=>`<tr><td>${escapar(p.code||"—")}</td><td>${escapar(p.name)}</td><td>${escapar(p.unit)}</td><td>${escapar(p.min_stock)}</td><td>${p.active?"Sim":"Não"}</td><td class="frota-acoes-linha"><button class="frota-icone-acao" data-edit-peca="${escapar(p.id)}" type="button">✏️</button><button class="frota-icone-acao frota-excluir" data-del-peca="${escapar(p.id)}" type="button">🗑️</button></td></tr>`).join("");status.textContent=(data||[]).length?`${data.length} peça(s).`:"Nenhuma peça cadastrada.";}
       function abrirForm(p=null){area.innerHTML=`<form class="frota-form"><h3>${p?"Editar":"Nova"} peça</h3><div class="frota-campos"><label>Código<input name="code" value="${escapar(p?.code||"")}"></label><label>Nome da peça<input name="name" required value="${escapar(p?.name||"")}"></label><label>Unidade<input name="unit" required value="${escapar(p?.unit||"unidade")}"></label><label>Estoque mínimo<input name="min_stock" type="number" min="0" step="0.01" required value="${escapar(p?.min_stock??0)}"></label><label>Ativa<select name="active"><option value="true" ${p?.active!==false?"selected":""}>Sim</option><option value="false" ${p?.active===false?"selected":""}>Não</option></select></label><label>Observações<textarea name="notes">${escapar(p?.notes||"")}</textarea></label></div><p class="frota-status"></p><div class="frota-acoes"><button class="frota-botao" type="submit">Salvar</button><button class="frota-botao frota-secundario" id="cancelar-peca" type="button">Cancelar</button></div></form>`;area.querySelector("#cancelar-peca").onclick=()=>area.replaceChildren();area.querySelector("form").onsubmit=async e=>{e.preventDefault();const f=e.currentTarget,fd=new FormData(f),dados={code:String(fd.get("code")||"").trim()||null,name:String(fd.get("name")||"").trim(),unit:String(fd.get("unit")||"unidade").trim(),min_stock:Number(fd.get("min_stock")||0),active:fd.get("active")==="true",notes:String(fd.get("notes")||"").trim()||null};const aviso=f.querySelector(".frota-status");try{const r=p?await supabaseClient.from("parts").update(dados).eq("id",p.id):await supabaseClient.from("parts").insert(dados);if(r.error)throw r.error;area.replaceChildren();await carregar();}catch(err){aviso.textContent=`Erro ao salvar: ${err.message}`;}};}
@@ -373,7 +366,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     async function renderizarEstoque() {
-      conteudoModulo.innerHTML = `<div class="frota-acoes"><button type="button" class="frota-botao" id="nova-movimentacao">+ Registrar movimentação</button><button type="button" class="frota-botao frota-secundario frota-atualizar-icone" id="atualizar-estoque" title="Atualizar" aria-label="Atualizar">↻</button>${botaoRelatorio('estoque')}</div><div id="form-mov-estoque"></div><p class="frota-status" id="status-estoque">Carregando estoque...</p><div class="frota-tabela-wrap"><table class="frota-tabela"><thead><tr><th>Peça</th><th>Unidade</th><th>Estoque mínimo</th><th>Saldo</th><th>Situação</th></tr></thead><tbody id="lista-saldo-estoque"></tbody></table></div><button type="button" class="frota-botao frota-secundario" id="abrir-recentes-estoque">Recentes</button><div id="modal-recentes-estoque" class="frota-modal-relatorio" hidden><div class="frota-modal-cartao" role="dialog" aria-modal="true"><button type="button" class="frota-modal-fechar" id="fechar-recentes-estoque" aria-label="Fechar">×</button><h3>Movimentações recentes</h3><div class="frota-tabela-wrap"><table class="frota-tabela"><thead><tr><th>Data</th><th>Peça</th><th>Tipo</th><th>Quantidade</th><th>Valor unitário</th><th>Veículo</th></tr></thead><tbody id="lista-mov-estoque"></tbody></table></div></div></div>`;
+      conteudoModulo.innerHTML = `<div class="frota-acoes"><button type="button" class="frota-botao" id="nova-movimentacao">+ Registrar movimentação</button><button type="button" class="frota-botao frota-secundario frota-atualizar-icone" id="atualizar-estoque" title="Atualizar" aria-label="Atualizar">↻</button></div><div id="form-mov-estoque"></div><p class="frota-status" id="status-estoque">Carregando estoque...</p><div class="frota-tabela-wrap"><table class="frota-tabela"><thead><tr><th>Peça</th><th>Unidade</th><th>Estoque mínimo</th><th>Saldo</th><th>Situação</th></tr></thead><tbody id="lista-saldo-estoque"></tbody></table></div><button type="button" class="frota-botao frota-secundario" id="abrir-recentes-estoque">Recentes</button><div id="modal-recentes-estoque" class="frota-modal-relatorio" hidden><div class="frota-modal-cartao" role="dialog" aria-modal="true"><button type="button" class="frota-modal-fechar" id="fechar-recentes-estoque" aria-label="Fechar">×</button><h3>Movimentações recentes</h3><div class="frota-tabela-wrap"><table class="frota-tabela"><thead><tr><th>Data</th><th>Peça</th><th>Tipo</th><th>Quantidade</th><th>Valor unitário</th><th>Veículo</th></tr></thead><tbody id="lista-mov-estoque"></tbody></table></div></div></div>`;
       const status=document.getElementById('status-estoque'),saldo=document.getElementById('lista-saldo-estoque'),mov=document.getElementById('lista-mov-estoque'),form=document.getElementById('form-mov-estoque');
       const fmt=n=>Number(n||0).toLocaleString('pt-BR',{maximumFractionDigits:3});
       async function carregar(){
@@ -400,7 +393,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         form.querySelector('#cancelar-mov').onclick=()=>form.replaceChildren();
         form.querySelector('form').onsubmit=async e=>{e.preventDefault();const f=e.currentTarget,fd=new FormData(f),data={part_id:fd.get('part_id'),movement_type:fd.get('movement_type'),quantity:Number(fd.get('quantity')),movement_date:fd.get('movement_date'),unit_value:Number(fd.get('unit_value')),vehicle_id:fd.get('vehicle_id')||null,reference:fd.get('reference')||null,notes:fd.get('notes')||null};const msg=f.querySelector('.frota-status');const {error}=await supabaseClient.from('stock_movements').insert(data);if(error){msg.textContent=`Erro ao salvar: ${error.message}`;return;}form.replaceChildren();await carregar();};
       };
-      document.getElementById('atualizar-estoque').onclick=carregar; document.getElementById('abrir-recentes-estoque').onclick=()=>document.getElementById('modal-recentes-estoque').hidden=false; document.getElementById('fechar-recentes-estoque').onclick=()=>document.getElementById('modal-recentes-estoque').hidden=true; vincularBotoesRelatorio(); await carregar();
+      document.getElementById('atualizar-estoque').onclick=carregar; document.getElementById('abrir-recentes-estoque').onclick=()=>document.getElementById('modal-recentes-estoque').hidden=false; document.getElementById('fechar-recentes-estoque').onclick=()=>document.getElementById('modal-recentes-estoque').hidden=true; await carregar();
     }
 
     async function renderizarFinanceiro() {
@@ -430,6 +423,16 @@ document.addEventListener("DOMContentLoaded", async () => {
     async function renderizarRelatorios() {
       conteudoModulo.innerHTML = `
         <div class="frota-acoes frota-relatorios-linha"><strong>Relatórios</strong><span class="frota-acoes-espacador"></span><button type="button" class="frota-botao" id="botao-graficos-relatorios">Gráficos</button></div>
+        <section class="frota-relatorios-modulos" aria-label="Relatórios por módulo">
+          <p>Escolha a área para gerar um relatório em PDF:</p>
+          <div class="frota-acoes frota-botoes-relatorio-modulo">
+            <button type="button" class="frota-botao" data-abrir-relatorio="abastecimentos">Abastecimentos</button>
+            <button type="button" class="frota-botao" data-abrir-relatorio="mecanica">Mecânica</button>
+            <button type="button" class="frota-botao" data-abrir-relatorio="revisao">Revisão</button>
+            <button type="button" class="frota-botao" data-abrir-relatorio="pecas">Peças</button>
+            <button type="button" class="frota-botao" data-abrir-relatorio="estoque">Estoque</button>
+          </div>
+        </section>
         <section class="frota-relatorios-graficos">
           <div class="frota-acoes frota-filtros-graficos">
             <label>Formato do gráfico<select id="tipo-grafico"><option value="pizza">Pizza</option><option value="coluna">Coluna</option></select></label>
@@ -440,6 +443,9 @@ document.addEventListener("DOMContentLoaded", async () => {
           <div id="painel-graficos" class="frota-graficos-grid"></div>
         </section>`;
       document.getElementById('botao-graficos-relatorios').onclick=()=>document.querySelector('.frota-relatorios-graficos').scrollIntoView({behavior:'smooth',block:'start'});
+      conteudoModulo.querySelectorAll('[data-abrir-relatorio]').forEach(botao => {
+        botao.addEventListener('click', () => abrirJanelaRelatorio(botao.dataset.abrirRelatorio));
+      });
       const status = document.getElementById('status-graficos');
       const painel = document.getElementById('painel-graficos');
       const moeda = n => Number(n || 0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
