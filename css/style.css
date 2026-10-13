@@ -1042,3 +1042,18 @@ body.tema-escuro .frota-icone-acao.frota-excluir { color:#ff9188; }
 .frota-acoes { row-gap: 6px; }
 .frota-form { padding-top: 10px; padding-bottom: 10px; }
 .frota-form h3, .frota-financeiro-veiculo h3 { margin-top: 8px; margin-bottom: 8px; }
+
+/* Ações por ícone e janelas flutuantes */
+.frota-icone-atualizar{width:40px;min-width:40px;height:40px;padding:8px;display:inline-flex;align-items:center;justify-content:center}
+.frota-icone-atualizar svg,.frota-icone-acao svg{width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.frota-modal-backdrop{position:fixed;inset:0;z-index:9999;background:rgba(8,18,14,.52);display:flex;align-items:center;justify-content:center;padding:18px}
+.frota-modal-backdrop[hidden]{display:none!important}
+.frota-modal{position:relative;width:min(760px,100%);max-height:88vh;overflow:auto;background:var(--surface,#fff);color:var(--text,#17251f);border:1px solid var(--border,#dce5df);border-radius:16px;padding:24px;box-shadow:0 18px 60px rgba(0,0,0,.25)}
+.frota-modal h3{margin:0 42px 18px 0}
+.frota-modal-fechar{position:absolute;right:12px;top:10px;width:36px;height:36px;border:0;border-radius:9px;background:transparent;color:inherit;font-size:28px;cursor:pointer}
+.frota-modal label{margin:12px 0;display:block}
+.frota-modal select{display:block;width:100%;min-height:40px;padding:8px;border:1px solid var(--border,#dce5df);border-radius:8px;background:var(--surface,#fff);color:inherit}
+.frota-check-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px;max-height:220px;overflow:auto;padding:10px;border:1px solid var(--border,#dce5df);border-radius:10px}
+.frota-check-list label{display:flex;gap:8px;align-items:center;margin:0;font-weight:500}
+.frota-check-list input{width:auto;min-height:0}
+@media(max-width:600px){.frota-modal{padding:18px}.frota-icone-atualizar{width:36px;min-width:36px;height:36px}}
