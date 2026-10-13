@@ -1,0 +1,1067 @@
+
+:root {
+  --green: #12352b;
+  --green-light: #1e5946;
+  --gold: #e5b94f;
+  --background: #f3f6f4;
+  --surface: #ffffff;
+  --text: #17251f;
+  --muted: #68766f;
+  --border: #dce5df;
+  --success: #1f754c;
+  --danger: #b42318;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: Arial, Helvetica, sans-serif;
+  background: var(--background);
+  color: var(--text);
+  line-height: 1.5;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+.topbar {
+  background: var(--green);
+  color: white;
+  padding: 8px;
+  border-bottom: 4px solid var(--gold);
+}
+
+.brand {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+
+.brand-logo {
+  width: 110px;
+  height: auto;
+  max-width: 100%;
+  max-height: none;
+  flex: 0 1 auto;
+  display: block;
+  object-fit: contain;
+  border-radius: 0;
+  background: transparent;
+}
+
+
+.brand h1 {
+  margin: 0;
+  font-size: 23px;
+  line-height: 1.25;
+}
+
+.brand p {
+  margin: 4px 0 0;
+  color: #d6e5dc;
+  font-size: 13px;
+}
+
+.container {
+  max-width: 1100px;
+  margin: 34px auto;
+  padding: 0 18px;
+}
+
+.welcome {
+  margin-bottom: 25px;
+}
+
+.welcome h2 {
+  margin: 0 0 8px;
+  font-size: 27px;
+}
+
+.welcome p {
+  max-width: 720px;
+  margin: 0;
+  color: var(--muted);
+}
+
+.main-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  align-items: start;
+  gap: 22px;
+}
+
+.card {
+  min-width: 0;
+  padding: 25px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  box-shadow: 0 5px 20px rgb(18 53 43 / 4%);
+}
+
+.card > h2 {
+  margin: 0 0 8px;
+  font-size: 20px;
+}
+
+.card > p {
+  margin: 0 0 22px;
+  color: var(--muted);
+}
+
+label {
+  display: block;
+  margin: 17px 0 8px;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+input {
+  width: 100%;
+  min-height: 46px;
+  padding: 12px 14px;
+  border: 1px solid #cbd7cf;
+  border-radius: 9px;
+  background: white;
+  color: var(--text);
+}
+
+input:focus {
+  outline: 2px solid #8bb5a1;
+  border-color: var(--green-light);
+}
+
+.button {
+  min-height: 46px;
+  padding: 12px 18px;
+  border: 0;
+  border-radius: 9px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.button-primary {
+  width: 100%;
+  margin-top: 22px;
+  background: var(--green);
+  color: white;
+}
+
+.button-primary:hover {
+  background: var(--green-light);
+}
+
+.button:focus-visible {
+  outline: 3px solid var(--gold);
+  outline-offset: 3px;
+}
+
+.button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.message {
+  margin: 14px 0 0;
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+
+.message:empty {
+  display: none;
+}
+
+.message.error {
+  color: var(--danger);
+}
+
+.message.success {
+  color: var(--success);
+}
+
+.module-list {
+  display: grid;
+  gap: 13px;
+}
+
+.module-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 13px;
+  padding: 15px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: #f7faf8;
+}
+
+.module-icon {
+  width: 40px;
+  height: 40px;
+  flex: 0 0 40px;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  background: #e3eee7;
+  font-size: 20px;
+}
+
+.module-item h3 {
+  margin: 2px 0 4px;
+  font-size: 15px;
+}
+
+.module-item p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.footer {
+  padding: 25px 15px;
+  color: var(--muted);
+  text-align: center;
+  font-size: 12px;
+}
+
+@media (max-width: 760px) {
+  .container {
+    margin-top: 24px;
+  }
+
+  .main-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .card {
+    padding: 20px;
+  }
+
+  .welcome h2 {
+    font-size: 23px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ========================================
+   FROTA PRO — PAINEL PRINCIPAL
+   ======================================== */
+
+.pagina-painel {
+  margin: 0;
+  padding-bottom: 90px;
+  background: var(--background, #f3f6f4);
+  color: var(--text, #17251f);
+}
+
+/* Cabeçalho */
+
+.painel-topo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 16px;
+  background: var(--green, #12352b);
+  color: #fff;
+  border-bottom: 3px solid var(--gold, #e5b94f);
+}
+
+.painel-marca {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.painel-logo {
+  width: 64px;
+  height: auto;
+  object-fit: contain;
+}
+
+.painel-marca h1 {
+  margin: 0;
+  font-size: 20px;
+}
+
+.painel-marca p {
+  margin: 4px 0 0;
+  font-size: 12px;
+  opacity: 0.85;
+}
+
+#botao-sair {
+  padding: 8px 12px;
+  border: 1px solid rgba(255,255,255,.6);
+  border-radius: 8px;
+  background: transparent;
+  color: #fff;
+  cursor: pointer;
+}
+
+/* Conteúdo principal */
+
+.painel-conteudo {
+  width: calc(100% - 32px);
+  max-width: 1100px;
+  margin: 22px auto;
+}
+
+.boas-vindas {
+  margin-bottom: 20px;
+}
+
+.boas-vindas h2 {
+  margin: 0 0 6px;
+  font-size: 22px;
+}
+
+.boas-vindas p {
+  margin: 0;
+  color: var(--muted, #68766f);
+}
+
+.area-modulo {
+  min-height: 180px;
+  padding: 20px;
+  background: var(--surface, #fff);
+  border: 1px solid var(--border, #dce5df);
+  border-radius: 12px;
+}
+
+.area-modulo h3 {
+  margin-top: 0;
+  color: var(--green, #12352b);
+}
+
+/* Menu inferior fixo */
+
+.menu-inferior {
+  position: fixed;
+  z-index: 1000;
+  right: 0;
+  bottom: 0;
+  left: 0;
+
+  display: flex;
+  justify-content: flex-start;
+  gap: 4px;
+  overflow-x: auto;
+
+  padding: 8px 6px;
+  padding-bottom: max(8px, env(safe-area-inset-bottom));
+
+  background: var(--surface, #fff);
+  border-top: 1px solid var(--border, #dce5df);
+  box-shadow: 0 -3px 12px rgba(0,0,0,.08);
+
+  scrollbar-width: thin;
+}
+
+/* Botões e ícones */
+
+.item-menu {
+  flex: 1 0 88px;
+  min-width: 70px;
+  max-width: 150px;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+
+  padding: 7px 4px;
+  border: 0;
+  border-radius: 9px;
+
+  background: transparent;
+  color: var(--muted, #68766f);
+
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  text-align: center;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.item-menu svg {
+  display: block;
+  width: 23px;
+  height: 23px;
+  flex-shrink: 0;
+
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.item-menu.ativo {
+  background: rgba(30,89,70,.10);
+  color: var(--green, #12352b);
+}
+
+.item-menu:focus-visible,
+#botao-sair:focus-visible {
+  outline: 2px solid var(--gold, #e5b94f);
+  outline-offset: 2px;
+}
+
+/* Adaptação para celular */
+
+@media (max-width: 600px) {
+  .painel-topo {
+    padding: 9px 10px;
+  }
+
+  .painel-logo {
+    width: 52px;
+  }
+
+  .painel-marca h1 {
+    font-size: 17px;
+  }
+
+  .painel-marca p {
+    font-size: 11px;
+  }
+
+  #botao-sair {
+    padding: 8px;
+  }
+
+  .painel-conteudo {
+    margin-top: 16px;
+  }
+
+  .boas-vindas h2 {
+    font-size: 19px;
+  }
+
+  .area-modulo {
+    padding: 15px;
+  }
+
+  .item-menu {
+    flex-basis: 78px;
+  }
+}
+
+
+/* Correções do cabeçalho e comportamento visual do painel */
+.pagina-painel {
+  padding-bottom: 90px;
+}
+
+.pagina-painel .painel-topo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 16px;
+  min-height: 0;
+}
+
+.pagina-painel .painel-marca {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 3px;
+}
+
+.pagina-painel .painel-logo {
+  display: block;
+  width: 115px;
+  max-width: 38vw;
+  height: auto;
+  object-fit: contain;
+}
+
+.pagina-painel #nome-usuario {
+  margin: 0;
+  color: #fff;
+  font-size: 13px;
+  line-height: 1.3;
+}
+
+.pagina-painel .painel-acoes {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.pagina-painel .botao-ajustes {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 32px;
+  padding: 5px;
+  border: 1px solid rgba(255,255,255,.6);
+  border-radius: 7px;
+  background: transparent;
+  color: #fff;
+  cursor: pointer;
+}
+
+.pagina-painel .botao-ajustes svg {
+  display: block;
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.pagina-painel #botao-sair {
+  min-height: 30px;
+  padding: 5px 10px;
+  font-size: 12px;
+}
+
+.pagina-painel .boas-vindas[hidden] {
+  display: none !important;
+}
+
+.pagina-painel .painel-ajustes {
+  position: fixed;
+  z-index: 1100;
+  top: 76px;
+  right: 12px;
+  width: min(280px, calc(100vw - 24px));
+  padding: 16px;
+  background: var(--surface, #fff);
+  color: var(--text, #17251f);
+  border: 1px solid var(--border, #dce5df);
+  border-radius: 12px;
+  box-shadow: 0 8px 28px rgba(0,0,0,.18);
+}
+
+.pagina-painel .painel-ajustes[hidden] {
+  display: none !important;
+}
+
+.pagina-painel .painel-ajustes h3 {
+  margin: 0 0 14px;
+}
+
+.pagina-painel .painel-ajustes label,
+.pagina-painel .painel-ajustes select,
+.pagina-painel .painel-ajustes input,
+.pagina-painel .painel-ajustes span {
+  display: block;
+  width: 100%;
+  margin-bottom: 8px;
+}
+
+.pagina-painel .painel-ajustes select {
+  box-sizing: border-box;
+  padding: 8px;
+}
+
+.pagina-painel.tema-escuro {
+  --background: #17211d;
+  --surface: #222e28;
+  --text: #edf3ef;
+  --muted: #bdc9c1;
+  --border: #405047;
+}
+
+.pagina-painel.tema-escuro .area-modulo {
+  background: var(--surface);
+  color: var(--text);
+}
+
+.pagina-painel.tema-escuro .area-modulo h3 {
+  color: #dcefe4;
+}
+
+@media (max-width: 600px) {
+  .pagina-painel .painel-topo {
+    padding: 7px 10px;
+  }
+
+  .pagina-painel .painel-logo {
+    width: 94px;
+  }
+
+  .pagina-painel .painel-acoes {
+    gap: 6px;
+  }
+}
+
+
+/* Ajuste fino solicitado: logo +10% sem aumentar a barra verde */
+.pagina-painel .painel-topo {
+  height: 72px;
+  box-sizing: border-box;
+  overflow: visible;
+}
+
+.pagina-painel .painel-marca {
+  height: 100%;
+  justify-content: center;
+  gap: 2px;
+  min-width: 0;
+}
+
+.pagina-painel .painel-logo {
+  width: 126px;
+  max-width: 38vw;
+  max-height: 43px;
+  object-fit: contain;
+}
+
+.pagina-painel .painel-acoes {
+  align-self: center;
+}
+
+.pagina-painel .botao-ajustes svg {
+  width: 22px;
+  height: 22px;
+}
+@media (max-width: 600px) {
+  .pagina-painel .painel-topo {
+    height: 72px;
+  }
+  .pagina-painel .painel-logo {
+    width: 103px;
+    max-width: 38vw;
+    max-height: 42px;
+  }
+}
+
+
+/* Temas do Frota PRO: claro, verde, azul e escuro */
+.pagina-painel.tema-verde {
+  --green: #12352b;
+  --green-light: #1e5946;
+  --background: #f3f6f4;
+  --surface: #ffffff;
+  --text: #17251f;
+  --muted: #68766f;
+  --border: #dce5df;
+}
+
+.pagina-painel.tema-azul {
+  --green: #163b63;
+  --green-light: #245b91;
+  --background: #f2f6fb;
+  --surface: #ffffff;
+  --text: #182638;
+  --muted: #64758a;
+  --border: #d8e2ee;
+}
+
+.pagina-painel.tema-azul .painel-topo {
+  background: #163b63;
+}
+
+.pagina-painel.tema-azul .area-modulo h3,
+.pagina-painel.tema-azul .item-menu.ativo {
+  color: #163b63;
+}
+
+.pagina-painel.tema-azul .item-menu.ativo {
+  background: rgba(36,91,145,.12);
+}
+
+.pagina-painel.tema-escuro {
+  --green: #24272b;
+  --green-light: #353a40;
+  --background: #17191c;
+  --surface: #24272b;
+  --text: #f1f3f5;
+  --muted: #c1c7ce;
+  --border: #454b52;
+}
+
+.pagina-painel.tema-escuro .painel-topo {
+  background: #24272b;
+  border-bottom-color: #777f88;
+}
+
+.pagina-painel.tema-escuro .area-modulo,
+.pagina-painel.tema-escuro .painel-ajustes {
+  background: #24272b;
+  color: #f1f3f5;
+  border-color: #454b52;
+}
+
+.pagina-painel.tema-escuro .area-modulo h3 {
+  color: #f1f3f5;
+}
+
+.pagina-painel.tema-escuro .menu-inferior {
+  background: #202327;
+  border-top-color: #454b52;
+}
+
+/* Garantir que ícones e nomes das abas continuem visíveis no tema escuro */
+.pagina-painel.tema-escuro .item-menu {
+  color: #d7dce2;
+  background: transparent;
+}
+
+.pagina-painel.tema-escuro .item-menu svg {
+  stroke: currentColor;
+  opacity: 1;
+}
+
+.pagina-painel.tema-escuro .item-menu span {
+  color: inherit;
+  opacity: 1;
+}
+
+.pagina-painel.tema-escuro .item-menu.ativo {
+  color: #ffffff;
+  background: #41474f;
+}
+
+.pagina-painel.tema-escuro .painel-ajustes label,
+.pagina-painel.tema-escuro .painel-ajustes span {
+  color: #f1f3f5;
+}
+
+.pagina-painel.tema-escuro .painel-ajustes select {
+  background: #17191c;
+  color: #f1f3f5;
+  border: 1px solid #555c64;
+}
+
+
+/* PALETAS DEFINITIVAS — Frota PRO */
+body.pagina-painel.tema-claro {
+  --green: #e8e0d2;
+  --green-light: #d8cdbb;
+  --background: #f8f7f4;
+  --surface: #ffffff;
+  --text: #343434;
+  --muted: #686868;
+  --border: #dedbd5;
+  background: #f8f7f4 !important;
+  color: #343434 !important;
+}
+body.pagina-painel.tema-claro .painel-topo {
+  background: #e8e0d2 !important;
+  color: #343434 !important;
+  border-bottom-color: #c9c0b2 !important;
+}
+body.pagina-painel.tema-claro .painel-marca p,
+body.pagina-painel.tema-claro #botao-sair,
+body.pagina-painel.tema-claro .botao-ajustes {
+  color: #343434 !important;
+}
+body.pagina-painel.tema-claro .botao-ajustes,
+body.pagina-painel.tema-claro #botao-sair {
+  border-color: #8f887d !important;
+}
+body.pagina-painel.tema-claro .menu-inferior {
+  background: #ffffff !important;
+  border-top-color: #dedbd5 !important;
+}
+body.pagina-painel.tema-claro .item-menu {
+  color: #686868 !important;
+}
+body.pagina-painel.tema-claro .item-menu.ativo {
+  color: #343434 !important;
+  background: #eee9e1 !important;
+}
+
+body.pagina-painel.tema-verde {
+  --green: #12352b;
+  --green-light: #1e5946;
+  --background: #f3f6f4;
+  --surface: #ffffff;
+  --text: #17251f;
+  --muted: #68766f;
+  --border: #dce5df;
+  background: #f3f6f4 !important;
+  color: #17251f !important;
+}
+body.pagina-painel.tema-verde .painel-topo {
+  background: #12352b !important;
+  color: #ffffff !important;
+  border-bottom-color: #e5b94f !important;
+}
+body.pagina-painel.tema-verde .painel-marca p,
+body.pagina-painel.tema-verde #botao-sair,
+body.pagina-painel.tema-verde .botao-ajustes {
+  color: #ffffff !important;
+}
+body.pagina-painel.tema-verde .menu-inferior {
+  background: #ffffff !important;
+}
+body.pagina-painel.tema-verde .item-menu {
+  color: #68766f !important;
+}
+body.pagina-painel.tema-verde .item-menu.ativo {
+  color: #12352b !important;
+  background: #e8efeb !important;
+}
+
+body.pagina-painel.tema-azul {
+  --green: #234a70;
+  --green-light: #356b9b;
+  --background: #f3f2ee;
+  --surface: #ffffff;
+  --text: #273746;
+  --muted: #687581;
+  --border: #d8d9d8;
+  background: #f3f2ee !important;
+  color: #273746 !important;
+}
+body.pagina-painel.tema-azul .painel-topo {
+  background: #234a70 !important;
+  color: #ffffff !important;
+  border-bottom-color: #c8bda9 !important;
+}
+body.pagina-painel.tema-azul .painel-marca p,
+body.pagina-painel.tema-azul #botao-sair,
+body.pagina-painel.tema-azul .botao-ajustes {
+  color: #ffffff !important;
+}
+body.pagina-painel.tema-azul .menu-inferior {
+  background: #ffffff !important;
+}
+body.pagina-painel.tema-azul .item-menu {
+  color: #687581 !important;
+}
+body.pagina-painel.tema-azul .item-menu.ativo {
+  color: #234a70 !important;
+  background: #e6edf3 !important;
+}
+
+body.pagina-painel.tema-escuro {
+  --green: #303236;
+  --green-light: #45484d;
+  --background: #292b2f;
+  --surface: #373a3f;
+  --text: #eeeeef;
+  --muted: #c2c5c9;
+  --border: #50545a;
+  background: #292b2f !important;
+  color: #eeeeef !important;
+}
+body.pagina-painel.tema-escuro .painel-topo {
+  background: #303236 !important;
+  color: #ffffff !important;
+  border-bottom-color: #666a70 !important;
+}
+body.pagina-painel.tema-escuro .painel-marca p,
+body.pagina-painel.tema-escuro #botao-sair,
+body.pagina-painel.tema-escuro .botao-ajustes {
+  color: #ffffff !important;
+}
+body.pagina-painel.tema-escuro .area-modulo,
+body.pagina-painel.tema-escuro .painel-ajustes {
+  background: #373a3f !important;
+  color: #eeeeef !important;
+  border-color: #50545a !important;
+}
+body.pagina-painel.tema-escuro .area-modulo h3,
+body.pagina-painel.tema-escuro .painel-ajustes label,
+body.pagina-painel.tema-escuro .painel-ajustes span {
+  color: #eeeeef !important;
+}
+body.pagina-painel.tema-escuro .menu-inferior {
+  background: #303236 !important;
+  border-top-color: #50545a !important;
+}
+body.pagina-painel.tema-escuro .item-menu {
+  color: #d3d5d8 !important;
+  background: transparent !important;
+}
+body.pagina-painel.tema-escuro .item-menu svg {
+  stroke: currentColor !important;
+  opacity: 1 !important;
+}
+body.pagina-painel.tema-escuro .item-menu span {
+  color: inherit !important;
+  opacity: 1 !important;
+}
+body.pagina-painel.tema-escuro .item-menu.ativo {
+  color: #ffffff !important;
+  background: #50545a !important;
+}
+body.pagina-painel.tema-escuro .painel-ajustes select {
+  background: #292b2f !important;
+  color: #eeeeef !important;
+  border-color: #666a70 !important;
+}
+
+/* Visibilidade consistente da barra inferior em todos os temas */
+body.pagina-painel .menu-inferior {
+  z-index: 1000;
+}
+body.pagina-painel .item-menu,
+body.pagina-painel .item-menu span,
+body.pagina-painel .item-menu svg {
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+
+/* Refinamento visual dos temas Claro e Verde */
+body.pagina-painel.tema-verde {
+  --green: #12352b;
+  --green-light: #1e5946;
+  --background: #f3f6f4;
+  --surface: #ffffff;
+  --text: #17251f;
+  --muted: #68766f;
+  --border: #dce5df;
+  background: #f3f6f4 !important;
+  color: #17251f !important;
+}
+body.pagina-painel.tema-verde .painel-topo {
+  background: #12352b !important;
+  border-bottom-color: #e5b94f !important;
+}
+body.pagina-painel.tema-verde .item-menu.ativo {
+  color: #12352b !important;
+  background: #e8efeb !important;
+}
+
+body.pagina-painel.tema-claro {
+  --green: #e8e0d2;
+  --green-light: #d8cdbb;
+  --background: #f8f7f4;
+  --surface: #ffffff;
+  --text: #343434;
+  --muted: #595959;
+  --border: #dedbd5;
+  background: #f8f7f4 !important;
+  color: #343434 !important;
+}
+body.pagina-painel.tema-claro .painel-topo {
+  background: #ded5c5 !important;
+  color: #292929 !important;
+  border-bottom-color: #b8ad9c !important;
+}
+body.pagina-painel.tema-claro .painel-marca p,
+body.pagina-painel.tema-claro #botao-sair,
+body.pagina-painel.tema-claro .botao-ajustes {
+  color: #292929 !important;
+}
+body.pagina-painel.tema-claro .area-modulo h3,
+body.pagina-painel.tema-claro .area-modulo h2,
+body.pagina-painel.tema-claro .painel-conteudo h1,
+body.pagina-painel.tema-claro .painel-conteudo h2,
+body.pagina-painel.tema-claro .painel-conteudo h3 {
+  color: #292929 !important;
+  opacity: 1 !important;
+}
+body.pagina-painel.tema-claro .painel-ajustes {
+  border-radius: 16px !important;
+}
+body.pagina-painel .painel-ajustes {
+  border-radius: 16px !important;
+}
+body.pagina-painel .painel-ajustes select {
+  border-radius: 9px !important;
+}
+
+
+/* Formulários e tabelas dos módulos Veículos e Abastecimentos */
+.frota-acoes { display:flex; flex-wrap:wrap; gap:8px; margin: 10px 0 14px; }
+.frota-botao { border:0; border-radius:10px; padding:10px 14px; background:var(--green,#1e5946); color:#fff; font:inherit; font-weight:600; cursor:pointer; }
+.frota-botao:disabled { opacity:.6; cursor:wait; }
+.frota-botao.frota-secundario { background:var(--surface,#fff); color:var(--text,#25332d); border:1px solid var(--border,#dce5df); }
+.frota-form { margin:12px 0 16px; padding:14px; border:1px solid var(--border,#dce5df); border-radius:14px; background:var(--surface,#fff); }
+.frota-form h4 { margin:0 0 12px; color:var(--green,#12352b); }
+.frota-campos { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+.frota-campos label { display:flex; flex-direction:column; gap:5px; font-size:.92em; font-weight:600; }
+.frota-campos input, .frota-campos select { box-sizing:border-box; width:100%; min-width:0; padding:10px; border:1px solid var(--border,#dce5df); border-radius:9px; background:var(--surface,#fff); color:var(--text,#25332d); font:inherit; }
+.frota-status { color:var(--muted,#68766f); font-size:.9em; margin:10px 0; }
+.frota-tabela-wrap { max-width:100%; overflow-x:auto; border:1px solid var(--border,#dce5df); border-radius:10px; }
+.frota-tabela { width:100%; border-collapse:collapse; font-size:.9em; white-space:nowrap; }
+.frota-tabela th, .frota-tabela td { text-align:left; padding:9px 10px; border-bottom:1px solid var(--border,#dce5df); }
+.frota-tabela th { background:var(--green,#1e5946); color:#fff; }
+.frota-tabela tr:last-child td { border-bottom:0; }
+@media(max-width:600px) { .frota-campos { grid-template-columns:1fr; } .frota-form { padding:11px; } }
+body.tema-escuro .frota-form, body.tema-escuro .frota-campos input, body.tema-escuro .frota-campos select, body.tema-escuro .frota-botao.frota-secundario { background:#292d31; color:#f2f2f2; }
+body.tema-escuro .frota-tabela th { background:#454b50; }
+
+/* Ações de edição e exclusão nas tabelas do Frota PRO */
+.frota-acoes-linha { white-space: nowrap; }
+.frota-icone-acao { display:inline-flex; align-items:center; justify-content:center; width:34px; height:34px; margin:0 3px; padding:0; border:1px solid var(--border,#dce5df); border-radius:9px; background:var(--surface,#fff); color:var(--text,#25332d); cursor:pointer; font-size:16px; }
+.frota-icone-acao:hover { transform:translateY(-1px); box-shadow:0 2px 7px #00000018; }
+.frota-icone-acao.frota-excluir { color:#b42318; }
+body.tema-escuro .frota-icone-acao { background:#292d31; color:#f2f2f2; border-color:#555b60; }
+body.tema-escuro .frota-icone-acao.frota-excluir { color:#ff9188; }
+
+/* Alertas de validade da CNH */
+.frota-alarme{display:inline-block;padding:4px 8px;border-radius:9px;font-size:.85em;font-weight:600;white-space:nowrap}
+.frota-alarme-neutro{background:#e5e7eb;color:#374151}
+.frota-alarme-ok{background:#dcfce7;color:#166534}
+.frota-alarme-alerta{background:#fef3c7;color:#92400e}
+.frota-alarme-vencido{background:#fee2e2;color:#991b1b}
+
+/* Gráficos de relatórios: controles compactos e visualização responsiva */
+.frota-filtros-graficos { align-items: end; flex-wrap: wrap; gap: 12px; }
+.frota-filtros-graficos label { display:flex; flex-direction:column; gap:5px; font-size:.9rem; font-weight:600; }
+.frota-filtros-graficos select { min-width:150px; padding:8px 10px; border:1px solid var(--borda, #cbd5e1); border-radius:8px; background:var(--fundo-cartao, #fff); color:inherit; }
+.frota-graficos-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,360px),1fr)); gap:16px; margin-top:14px; }
+.frota-grafico-card { min-width:0; padding:14px; border:1px solid var(--borda, #d1d5db); border-radius:12px; background:var(--fundo-cartao, #fff); }
+.frota-grafico-card h4 { margin:0 0 12px; font-size:1rem; }
+.frota-canvas-wrap { position:relative; width:100%; height:320px; }
+@media(max-width:600px){.frota-grafico-card{padding:10px}.frota-canvas-wrap{height:280px}.frota-filtros-graficos label,.frota-filtros-graficos select{width:100%}}
+
+
+/* Compactação vertical global solicitada: não altera larguras/colunas. */
+.frota-botao, .frota-icone-acao, .item-menu, .botao-ajustes, #botao-sair { min-height: 30px; padding-top: 5px; padding-bottom: 5px; }
+.frota-campos input, .frota-campos select, .frota-campos textarea, .frota-filtros-graficos select { min-height: 30px; padding-top: 4px; padding-bottom: 4px; }
+.frota-tabela th, .frota-tabela td { padding-top: 5px !important; padding-bottom: 5px !important; line-height: 1.2; }
+.frota-acoes { row-gap: 6px; }
+.frota-form { padding-top: 10px; padding-bottom: 10px; }
+.frota-form h3, .frota-financeiro-veiculo h3 { margin-top: 8px; margin-bottom: 8px; }
+
+/* Ações compactas e filtros alinhados à direita */
+.frota-icone-atualizar{width:18px;height:18px;display:block;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.frota-acoes .frota-botao[aria-label="Atualizar"]{display:inline-flex;align-items:center;justify-content:center;width:38px;min-width:38px;padding-left:8px;padding-right:8px}
+.frota-acoes-modulo{align-items:center}
+.frota-filtro-revisao{position:relative;margin-left:auto}
+.frota-botao-filtro{width:38px;min-width:38px;display:inline-flex;align-items:center;justify-content:center;padding-left:8px;padding-right:8px}
+.frota-botao-filtro svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.frota-menu-filtro{position:absolute;z-index:30;right:0;top:calc(100% + 6px);width:190px;padding:12px;border:1px solid var(--border,#dce5df);border-radius:12px;background:var(--surface,#fff);box-shadow:0 8px 28px #0002}
+.frota-menu-filtro label,.frota-modal-relatorios>label{display:block;font-weight:600;margin:4px 0 7px}
+.frota-menu-filtro select,.frota-modal-relatorios select{width:100%;padding:9px;border:1px solid var(--border,#dce5df);border-radius:8px;background:var(--surface,#fff);color:var(--text,#25332d);font:inherit}
+.frota-modal[hidden],.frota-menu-filtro[hidden]{display:none!important}
+.frota-modal{position:fixed;inset:0;z-index:1000;display:flex;align-items:center;justify-content:center;padding:18px;background:#0007}
+.frota-modal-conteudo{width:min(980px,100%);max-height:85vh;overflow:auto;padding:18px;border-radius:16px;background:var(--surface,#fff);color:var(--text,#25332d);box-shadow:0 16px 60px #0004}
+.frota-modal-relatorios{width:min(520px,100%)}
+.frota-modal-topo{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}
+.frota-modal-topo h3{margin:0}
+.frota-modal-fechar{width:34px;height:34px;border:1px solid var(--border,#dce5df);border-radius:9px;background:transparent;color:inherit;font-size:24px;line-height:1;cursor:pointer}
+.frota-modal-relatorios #filtro-tipo-relatorio-wrap{margin-top:12px}
+.frota-linha-relatorios{align-items:center}
+.frota-linha-relatorios strong{margin-right:auto}
+.frota-linha-relatorios #abrir-graficos{margin-left:auto}
+@media(max-width:600px){.frota-modal{padding:9px}.frota-modal-conteudo{padding:12px;max-height:90vh}.frota-linha-relatorios{flex-wrap:wrap}.frota-filtro-revisao{margin-left:auto}}
