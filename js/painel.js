@@ -81,8 +81,44 @@ document.addEventListener("DOMContentLoaded", async () => {
       return data || [];
     }
 
+    function fecharModalBase(backdrop){ if(backdrop) backdrop.remove(); }
+    function abrirModalFiltroRevisao(atual, aoSelecionar){
+      const old=document.getElementById('modal-filtro-revisao'); if(old)old.remove();
+      const modal=document.createElement('div'); modal.id='modal-filtro-revisao'; modal.className='frota-modal-backdrop';
+      modal.innerHTML=`<section class="frota-modal" role="dialog" aria-modal="true"><button type="button" class="frota-modal-fechar" aria-label="Fechar">×</button><h3>Filtrar revisões</h3><label>Tipo de revisão<select id="modal-tipo-revisao"><option ${atual==='Preventiva'?'selected':''}>Preventiva</option><option ${atual==='Corretiva'?'selected':''}>Corretiva</option><option ${atual==='Ambos'?'selected':''}>Ambos</option></select></label><div class="frota-acoes"><button type="button" class="frota-botao" id="aplicar-filtro-revisao">Aplicar</button></div></section>`;
+      document.body.appendChild(modal); modal.querySelector('.frota-modal-fechar').onclick=()=>modal.remove(); modal.querySelector('#aplicar-filtro-revisao').onclick=()=>{const val=modal.querySelector('select').value;modal.remove();aoSelecionar(val);};
+    }
+    async function abrirModalRelatorio(tipo){
+      const configs={abastecimentos:{titulo:'Relatório de Abastecimentos',table:'fuel_entries',select:'id,vehicle_id,entry_date,odometer,liters,total_value,consumption',date:'entry_date'},mecanica:{titulo:'Relatório de Mecânica',table:'mechanical_services',select:'id,vehicle_id,service_date,description,odometer,total_value,status',date:'service_date'},revisao:{titulo:'Relatório de Revisão',table:'revisions',select:'id,vehicle_id,revision_type,due_date,completed_date,description,due_odometer,completed_odometer,total_value,status',date:'due_date'},pecas:{titulo:'Relatório de Peças',table:'parts',select:'id,code,name,unit,min_stock,active',date:null},estoque:{titulo:'Relatório de Estoque',table:'stock_balances',select:'part_id,name,unit,min_stock,quantity_on_hand,active',date:null}};
+      const cfg=configs[tipo]; if(!cfg)return;
+      document.getElementById('modal-relatorio-dinamico')?.remove();
+      const modal=document.createElement('div');modal.id='modal-relatorio-dinamico';modal.className='frota-modal-backdrop';
+      const revisao=tipo==='revisao'?`<label>Tipo de revisão<select id="relatorio-tipo-revisao"><option>Preventiva</option><option>Corretiva</option><option selected>Ambos</option></select></label>`:'';
+      modal.innerHTML=`<section class="frota-modal" role="dialog" aria-modal="true"><button type="button" class="frota-modal-fechar" aria-label="Fechar">×</button><h3>${cfg.titulo}</h3>${revisao}<label>Tipo de relatório<select id="relatorio-escopo"><option value="geral">Geral — todos os veículos</option><option value="seletivo">Seletivo — escolher veículos</option></select></label><div id="relatorio-veiculos" hidden><p>Selecione um ou mais veículos:</p><div id="relatorio-lista-veiculos" class="frota-check-list">Carregando veículos...</div></div><p class="frota-status" id="relatorio-status"></p><div class="frota-acoes"><button type="button" class="frota-botao" id="gerar-pdf-relatorio">Gerar PDF</button><button type="button" class="frota-botao frota-secundario" id="cancelar-pdf-relatorio">Cancelar</button></div></section>`;
+      document.body.appendChild(modal); const close=()=>modal.remove();modal.querySelector('.frota-modal-fechar').onclick=close;modal.querySelector('#cancelar-pdf-relatorio').onclick=close;
+      let veiculos=[];try{veiculos=await carregarVeiculos();}catch(e){modal.querySelector('#relatorio-status').textContent='Não foi possível carregar a lista de veículos.';}
+      modal.querySelector('#relatorio-lista-veiculos').innerHTML=veiculos.map(v=>`<label><input type="checkbox" value="${escapar(v.id)}"> ${escapar(v.name||v.plate||'Veículo')}</label>`).join('')||'Nenhum veículo cadastrado.';
+      modal.querySelector('#relatorio-escopo').onchange=e=>modal.querySelector('#relatorio-veiculos').hidden=e.target.value!=='seletivo';
+      modal.querySelector('#gerar-pdf-relatorio').onclick=async()=>{
+        const status=modal.querySelector('#relatorio-status'),seletivo=modal.querySelector('#relatorio-escopo').value==='seletivo';
+        const ids=[...modal.querySelectorAll('#relatorio-lista-veiculos input:checked')].map(x=>x.value);
+        if(seletivo&&!ids.length){status.textContent='Selecione pelo menos um veículo.';return;}
+        status.textContent='Preparando relatório...';
+        try{
+          const {data,error}=await supabaseClient.from(cfg.table).select(cfg.select).order(cfg.date||'name',{ascending:false});if(error)throw error;
+          let rows=data||[]; if(cfg.table==='stock_balances'){} else if(tipo==='pecas'){} else if(seletivo) rows=rows.filter(r=>ids.includes(String(r.vehicle_id)));
+          if(tipo==='revisao'){const t=modal.querySelector('#relatorio-tipo-revisao').value;if(t!=='Ambos')rows=rows.filter(r=>r.revision_type===t);}
+          const nomes=new Map(veiculos.map(v=>[String(v.id),v.name||v.plate||'Veículo']));
+          const cols=tipo==='abastecimentos'?['Data','Veículo','KM','Litros','Valor (R$)','Consumo (km/l)']:tipo==='mecanica'?['Data','Veículo','Descrição','KM','Valor (R$)','Situação']:tipo==='revisao'?['Tipo','Data prevista','Data realizada','Veículo','Descrição','KM previsto','KM realizado','Valor (R$)','Situação']:tipo==='pecas'?['Código','Peça','Unidade','Estoque mínimo','Ativa']:['Peça','Unidade','Estoque mínimo','Saldo','Situação'];
+          const cell=(v)=>String(v??'—').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+          const body=rows.map(r=>{let a=tipo==='abastecimentos'?[r.entry_date,nomes.get(String(r.vehicle_id)),r.odometer,r.liters,r.total_value,r.consumption??'INÍCIO']:tipo==='mecanica'?[r.service_date,nomes.get(String(r.vehicle_id)),r.description,r.odometer,r.total_value,r.status]:tipo==='revisao'?[r.revision_type,r.due_date, r.completed_date,nomes.get(String(r.vehicle_id)),r.description,r.due_odometer,r.completed_odometer,r.total_value,r.status]:tipo==='pecas'?[r.code,r.name,r.unit,r.min_stock,r.active?'Sim':'Não']:[r.name,r.unit,r.min_stock,r.quantity_on_hand,Number(r.quantity_on_hand)<Number(r.min_stock)?'Repor':'OK'];return `<tr>${a.map(v=>`<td>${cell(v)}</td>`).join('')}</tr>`}).join('');
+          const w=window.open('','_blank');if(!w)throw new Error('Permita pop-ups para gerar o PDF.');w.document.write(`<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>${cfg.titulo}</title><style>body{font:12px Arial;margin:18mm;color:#222}h1{font-size:18px}table{width:100%;border-collapse:collapse}th,td{border:1px solid #aaa;padding:6px;text-align:left;overflow-wrap:anywhere}th{background:#e8edf0}footer{margin-top:14px;font-size:10px}@page{size:A4 portrait;margin:12mm}</style></head><body><h1>${cfg.titulo}</h1><p>Escopo: ${seletivo?'Seletivo':'Geral'}${tipo==='revisao'?' — '+modal.querySelector('#relatorio-tipo-revisao').value:''}</p><table><thead><tr>${cols.map(c=>`<th>${c}</th>`).join('')}</tr></thead><tbody>${body||`<tr><td colspan="${cols.length}">Nenhum registro encontrado.</td></tr>`}</tbody></table><footer>Frota PRO — ${new Date().toLocaleString('pt-BR')}</footer><script>window.onload=()=>window.print()<\/script></body></html>`);w.document.close();close();
+        }catch(e){status.textContent='Não foi possível gerar o relatório: '+e.message;}
+      };
+    }
+
     async function renderizarVeiculos() {
-      conteudoModulo.innerHTML = `<div class="frota-acoes"><button type="button" class="frota-botao" id="novo-veiculo">+ Novo veículo</button><button type="button" class="frota-botao frota-secundario" id="atualizar-veiculos">Atualizar</button></div><div id="form-veiculo-area"></div><p class="frota-status" id="status-veiculos">Carregando veículos...</p><div class="frota-tabela-wrap"><table class="frota-tabela"><thead><tr><th>Nome</th><th>Placa</th><th>Renavam</th><th>Ano</th><th>Modelo</th><th>Cor</th><th>Ações</th></tr></thead><tbody id="lista-veiculos"></tbody></table></div>`;
+      conteudoModulo.innerHTML = `<div class="frota-acoes"><button type="button" class="frota-botao" id="novo-veiculo">+ Novo veículo</button><button type="button" class="frota-botao frota-secundario frota-icone-atualizar" id="atualizar-veiculos" title="Atualizar" aria-label="Atualizar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 7v5h-5M4 17v-5h5M5.6 9a7 7 0 0 1 11.8-2L20 12M4 12l2.6 5a7 7 0 0 0 11.8-2"/></svg></button></div><div id="form-veiculo-area"></div><p class="frota-status" id="status-veiculos">Carregando veículos...</p><div class="frota-tabela-wrap"><table class="frota-tabela"><thead><tr><th>Nome</th><th>Placa</th><th>Renavam</th><th>Ano</th><th>Modelo</th><th>Cor</th><th>Ações</th></tr></thead><tbody id="lista-veiculos"></tbody></table></div>`;
       const areaForm = document.getElementById("form-veiculo-area"), status = document.getElementById("status-veiculos"), tbody = document.getElementById("lista-veiculos");
       const carregar = async () => {
         status.textContent = "Carregando veículos...";
@@ -138,7 +174,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     async function renderizarMotoristas() {
-      conteudoModulo.innerHTML = `<div class="frota-acoes"><button type="button" class="frota-botao" id="novo-motorista">+ Novo motorista</button><button type="button" class="frota-botao frota-secundario" id="atualizar-motoristas">Atualizar</button></div><div id="form-motorista-area"></div><p class="frota-status" id="status-motoristas">Carregando motoristas...</p><div class="frota-tabela-wrap"><table class="frota-tabela"><thead><tr><th>Nome</th><th>D.N.</th><th>Telefone</th><th>CNH</th><th>Validade</th><th>Alarme</th><th>Ações</th></tr></thead><tbody id="lista-motoristas"></tbody></table></div>`;
+      conteudoModulo.innerHTML = `<div class="frota-acoes"><button type="button" class="frota-botao" id="novo-motorista">+ Novo motorista</button><button type="button" class="frota-botao frota-secundario frota-icone-atualizar" id="atualizar-motoristas" title="Atualizar" aria-label="Atualizar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 7v5h-5M4 17v-5h5M5.6 9a7 7 0 0 1 11.8-2L20 12M4 12l2.6 5a7 7 0 0 0 11.8-2"/></svg></button></div><div id="form-motorista-area"></div><p class="frota-status" id="status-motoristas">Carregando motoristas...</p><div class="frota-tabela-wrap"><table class="frota-tabela"><thead><tr><th>Nome</th><th>D.N.</th><th>Telefone</th><th>CNH</th><th>Validade</th><th>Alarme</th><th>Ações</th></tr></thead><tbody id="lista-motoristas"></tbody></table></div>`;
       const area = document.getElementById('form-motorista-area'), status = document.getElementById('status-motoristas'), tbody = document.getElementById('lista-motoristas');
       const carregar = async () => {
         try {
@@ -183,7 +219,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     async function renderizarAbastecimentos() {
-      conteudoModulo.innerHTML = `<div class="frota-acoes"><button type="button" class="frota-botao" id="novo-abastecimento">+ Novo abastecimento</button><button type="button" class="frota-botao frota-secundario" id="atualizar-abastecimentos">Atualizar</button></div><div id="form-abastecimento-area"></div><p class="frota-status" id="status-abastecimentos">Carregando abastecimentos...</p><div class="frota-tabela-wrap"><table class="frota-tabela"><thead><tr><th>Data</th><th>Veículo</th><th>KM</th><th>Litros</th><th>Valor</th><th>Motorista</th><th>Consumo (km/l)</th><th>Ações</th></tr></thead><tbody id="lista-abastecimentos"></tbody></table></div>`;
+      conteudoModulo.innerHTML = `<div class="frota-acoes"><button type="button" class="frota-botao" id="novo-abastecimento">+ Novo abastecimento</button><button type="button" class="frota-botao frota-secundario" data-abrir-relatorio="abastecimentos">Relatório PDF</button><button type="button" class="frota-botao frota-secundario frota-icone-atualizar" id="atualizar-abastecimentos" title="Atualizar" aria-label="Atualizar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 7v5h-5M4 17v-5h5M5.6 9a7 7 0 0 1 11.8-2L20 12M4 12l2.6 5a7 7 0 0 0 11.8-2"/></svg></button></div><div id="form-abastecimento-area"></div><p class="frota-status" id="status-abastecimentos">Carregando abastecimentos...</p><div class="frota-tabela-wrap"><table class="frota-tabela"><thead><tr><th>Data</th><th>Veículo</th><th>KM</th><th>Litros</th><th>Valor</th><th>Motorista</th><th>Consumo (km/l)</th><th>Ações</th></tr></thead><tbody id="lista-abastecimentos"></tbody></table></div>`;
       const areaForm = document.getElementById("form-abastecimento-area");
       const status = document.getElementById("status-abastecimentos");
       const tbody = document.getElementById("lista-abastecimentos");
@@ -265,6 +301,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       };
       document.getElementById("novo-abastecimento").addEventListener("click", () => abrirForm());
       document.getElementById("atualizar-abastecimentos").addEventListener("click", carregar);
+      conteudoModulo.querySelectorAll("[data-abrir-relatorio]").forEach(b=>b.onclick=()=>abrirModalRelatorio(b.dataset.abrirRelatorio));
       await carregar();
     }
 
@@ -279,8 +316,8 @@ document.addEventListener("DOMContentLoaded", async () => {
         ], colunas:["revision_type","vehicle_id","description","due_date","due_odometer","completed_date","completed_odometer","status","total_value"] }
       }[tipo];
       if (!config) return;
-      conteudoModulo.innerHTML = `<div class="frota-acoes">${tipo==="revisao" ? `<button type="button" class="frota-botao seletor-revisao" data-tipo="Preventiva">Preventiva</button><button type="button" class="frota-botao frota-secundario seletor-revisao" data-tipo="Corretiva">Corretiva</button>` : ""}<button type="button" class="frota-botao" id="novo-manutencao">+ Novo ${config.plural}</button><button type="button" class="frota-botao frota-secundario" id="atualizar-manutencao">Atualizar</button></div><div id="form-manutencao-area"></div><p class="frota-status" id="status-manutencao">Carregando...</p><div class="frota-tabela-wrap"><table class="frota-tabela"><thead><tr><th>Data</th><th>Veículo</th><th>Descrição</th><th>KM</th><th>Valor</th><th>Situação</th><th>Ações</th></tr></thead><tbody id="lista-manutencao"></tbody></table></div>`;
-      let tipoFiltro = "Preventiva";
+      conteudoModulo.innerHTML = `<div class="frota-acoes"><button type="button" class="frota-botao" data-abrir-relatorio="${tipo}">Relatório PDF</button><button type="button" class="frota-botao" id="novo-manutencao">+ Novo ${config.plural}</button><button type="button" class="frota-botao frota-secundario frota-icone-atualizar" id="atualizar-manutencao" title="Atualizar" aria-label="Atualizar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 7v5h-5M4 17v-5h5M5.6 9a7 7 0 0 1 11.8-2L20 12M4 12l2.6 5a7 7 0 0 0 11.8-2"/></svg></button></div><div id="form-manutencao-area"></div><p class="frota-status" id="status-manutencao">Carregando...</p><div class="frota-tabela-wrap"><table class="frota-tabela"><thead><tr><th>Data</th><th>Veículo</th><th>Descrição</th><th>KM</th><th>Valor</th><th>Situação</th><th>Ações</th></tr></thead><tbody id="lista-manutencao"></tbody></table></div>`;
+      let tipoFiltro = "Ambos";
       const area=document.getElementById("form-manutencao-area"), status=document.getElementById("status-manutencao"), tbody=document.getElementById("lista-manutencao");
       let veiculos=[];
       try { veiculos=await carregarVeiculos(); } catch(e) { status.textContent="Não foi possível carregar veículos."; return; }
@@ -290,7 +327,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       async function carregar() {
         status.textContent="Carregando...";
         let q=supabaseClient.from(config.tabela).select("*").order(tipo==="mecanica"?"service_date":tipo==="revisao"?"due_date":"created_at",{ascending:false});
-        if(tipo==="revisao") q=q.eq("revision_type",tipoFiltro);
+        if(tipo==="revisao" && tipoFiltro!=="Ambos") q=q.eq("revision_type",tipoFiltro);
         const {data,error}=await q;
         if(error){status.textContent=`Erro ao carregar: ${error.message}`;return;}
         tbody.innerHTML=(data||[]).map(r=>`<tr><td>${escapar(fmtData(r.service_date||r.due_date||r.completed_date))}</td><td>${escapar(nomes.get(r.vehicle_id)||"—")}</td><td>${escapar(r.description||"—")}</td><td>${escapar(r.odometer??r.completed_odometer??r.due_odometer??"—")}</td><td>${escapar(valor(r.total_value))}</td><td>${escapar(r.status||"—")}</td><td class="frota-acoes-linha"><button type="button" class="frota-icone-acao" data-edit="${escapar(r.id)}" title="Editar">✏️</button><button type="button" class="frota-icone-acao frota-excluir" data-del="${escapar(r.id)}" title="Excluir">🗑️</button></td></tr>`).join("");
@@ -320,23 +357,28 @@ document.addEventListener("DOMContentLoaded", async () => {
       }
       document.getElementById("novo-manutencao").onclick=()=>abrirForm();
       document.getElementById("atualizar-manutencao").onclick=carregar;
-      conteudoModulo.querySelectorAll(".seletor-revisao").forEach(b=>b.onclick=()=>{tipoFiltro=b.dataset.tipo;conteudoModulo.querySelectorAll(".seletor-revisao").forEach(x=>x.classList.toggle("frota-secundario",x!==b));carregar();});
+      if(tipo==="revisao"){
+        const filtro=document.createElement('button'); filtro.type='button'; filtro.className='frota-botao frota-secundario frota-icone-acao'; filtro.title='Filtrar tipo de revisão'; filtro.setAttribute('aria-label','Filtrar tipo de revisão'); filtro.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5h18l-7 8v5l-4 2v-7z"/></svg>';
+        document.querySelector('.frota-acoes')?.appendChild(filtro);
+        filtro.onclick=()=>abrirModalFiltroRevisao(tipoFiltro,async novo=>{tipoFiltro=novo;filtro.title='Filtro: '+novo;await carregar();});
+      }
+      conteudoModulo.querySelectorAll('[data-abrir-relatorio]').forEach(b=>b.onclick=()=>abrirModalRelatorio(b.dataset.abrirRelatorio));
       tbody.onclick=async e=>{const edit=e.target.closest("[data-edit]"), del=e.target.closest("[data-del]"); if(edit){const {data,error}=await supabaseClient.from(config.tabela).select("*").eq("id",edit.dataset.edit).single();if(error){alert(error.message);return;}abrirForm(data);} if(del&&confirm("Confirma excluir este registro?")){const {error}=await supabaseClient.from(config.tabela).delete().eq("id",del.dataset.del);if(error)alert(`Não foi possível excluir: ${error.message}`);else carregar();}};
       await carregar();
     }
 
     async function renderizarPecas() {
-      conteudoModulo.innerHTML=`<div class="frota-acoes"><button class="frota-botao" id="nova-peca" type="button">+ Nova peça</button><button class="frota-botao frota-secundario" id="atualizar-pecas" type="button">Atualizar</button></div><div id="form-peca-area"></div><p class="frota-status" id="status-pecas">Carregando...</p><div class="frota-tabela-wrap"><table class="frota-tabela"><thead><tr><th>Código</th><th>Peça</th><th>Unidade</th><th>Estoque mínimo</th><th>Ativa</th><th>Ações</th></tr></thead><tbody id="lista-pecas"></tbody></table></div><p>Esta tela cadastra o catálogo de peças. O histórico de instalação por veículo será implementado separadamente para não misturar estoque com serviços.</p>`;
+      conteudoModulo.innerHTML=`<div class="frota-acoes"><button class="frota-botao" id="nova-peca" type="button">+ Nova peça</button><button class="frota-botao frota-secundario" type="button" data-abrir-relatorio="pecas">Relatório PDF</button><button class="frota-botao frota-secundario frota-icone-atualizar" id="atualizar-pecas" type="button" title="Atualizar" aria-label="Atualizar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 7v5h-5M4 17v-5h5M5.6 9a7 7 0 0 1 11.8-2L20 12M4 12l2.6 5a7 7 0 0 0 11.8-2"/></svg></button></div><div id="form-peca-area"></div><p class="frota-status" id="status-pecas">Carregando...</p><div class="frota-tabela-wrap"><table class="frota-tabela"><thead><tr><th>Código</th><th>Peça</th><th>Unidade</th><th>Estoque mínimo</th><th>Ativa</th><th>Ações</th></tr></thead><tbody id="lista-pecas"></tbody></table></div><p>Esta tela cadastra o catálogo de peças. O histórico de instalação por veículo será implementado separadamente para não misturar estoque com serviços.</p>`;
       const area=document.getElementById("form-peca-area"),status=document.getElementById("status-pecas"),tbody=document.getElementById("lista-pecas");
       async function carregar(){const {data,error}=await supabaseClient.from("parts").select("*").order("name");if(error){status.textContent=`Erro ao carregar: ${error.message}`;return;}tbody.innerHTML=(data||[]).map(p=>`<tr><td>${escapar(p.code||"—")}</td><td>${escapar(p.name)}</td><td>${escapar(p.unit)}</td><td>${escapar(p.min_stock)}</td><td>${p.active?"Sim":"Não"}</td><td class="frota-acoes-linha"><button class="frota-icone-acao" data-edit-peca="${escapar(p.id)}" type="button">✏️</button><button class="frota-icone-acao frota-excluir" data-del-peca="${escapar(p.id)}" type="button">🗑️</button></td></tr>`).join("");status.textContent=(data||[]).length?`${data.length} peça(s).`:"Nenhuma peça cadastrada.";}
       function abrirForm(p=null){area.innerHTML=`<form class="frota-form"><h3>${p?"Editar":"Nova"} peça</h3><div class="frota-campos"><label>Código<input name="code" value="${escapar(p?.code||"")}"></label><label>Nome da peça<input name="name" required value="${escapar(p?.name||"")}"></label><label>Unidade<input name="unit" required value="${escapar(p?.unit||"unidade")}"></label><label>Estoque mínimo<input name="min_stock" type="number" min="0" step="0.01" required value="${escapar(p?.min_stock??0)}"></label><label>Ativa<select name="active"><option value="true" ${p?.active!==false?"selected":""}>Sim</option><option value="false" ${p?.active===false?"selected":""}>Não</option></select></label><label>Observações<textarea name="notes">${escapar(p?.notes||"")}</textarea></label></div><p class="frota-status"></p><div class="frota-acoes"><button class="frota-botao" type="submit">Salvar</button><button class="frota-botao frota-secundario" id="cancelar-peca" type="button">Cancelar</button></div></form>`;area.querySelector("#cancelar-peca").onclick=()=>area.replaceChildren();area.querySelector("form").onsubmit=async e=>{e.preventDefault();const f=e.currentTarget,fd=new FormData(f),dados={code:String(fd.get("code")||"").trim()||null,name:String(fd.get("name")||"").trim(),unit:String(fd.get("unit")||"unidade").trim(),min_stock:Number(fd.get("min_stock")||0),active:fd.get("active")==="true",notes:String(fd.get("notes")||"").trim()||null};const aviso=f.querySelector(".frota-status");try{const r=p?await supabaseClient.from("parts").update(dados).eq("id",p.id):await supabaseClient.from("parts").insert(dados);if(r.error)throw r.error;area.replaceChildren();await carregar();}catch(err){aviso.textContent=`Erro ao salvar: ${err.message}`;}};}
-      document.getElementById("nova-peca").onclick=()=>abrirForm();document.getElementById("atualizar-pecas").onclick=carregar;
+      document.getElementById("nova-peca").onclick=()=>abrirForm();document.getElementById("atualizar-pecas").onclick=carregar;conteudoModulo.querySelectorAll("[data-abrir-relatorio]").forEach(b=>b.onclick=()=>abrirModalRelatorio(b.dataset.abrirRelatorio));
       tbody.onclick=async e=>{const ed=e.target.closest("[data-edit-peca]"),del=e.target.closest("[data-del-peca]");if(ed){const {data,error}=await supabaseClient.from("parts").select("*").eq("id",ed.dataset.editPeca).single();if(error){alert(error.message);return;}abrirForm(data);}if(del&&confirm("Confirma excluir esta peça do catálogo?")){const {error}=await supabaseClient.from("parts").delete().eq("id",del.dataset.delPeca);if(error)alert(`Não foi possível excluir: ${error.message}`);else carregar();}};
       await carregar();
     }
 
     async function renderizarEstoque() {
-      conteudoModulo.innerHTML = `<div class="frota-acoes"><button type="button" class="frota-botao" id="nova-movimentacao">+ Registrar movimentação</button><button type="button" class="frota-botao frota-secundario" id="atualizar-estoque">Atualizar</button></div><div id="form-mov-estoque"></div><p class="frota-status" id="status-estoque">Carregando estoque...</p><div class="frota-tabela-wrap"><table class="frota-tabela"><thead><tr><th>Peça</th><th>Unidade</th><th>Estoque mínimo</th><th>Saldo</th><th>Situação</th></tr></thead><tbody id="lista-saldo-estoque"></tbody></table></div><h3>Movimentações recentes</h3><div class="frota-tabela-wrap"><table class="frota-tabela"><thead><tr><th>Data</th><th>Peça</th><th>Tipo</th><th>Quantidade</th><th>Valor unitário</th><th>Veículo</th></tr></thead><tbody id="lista-mov-estoque"></tbody></table></div>`;
+      conteudoModulo.innerHTML = `<div class="frota-acoes"><button type="button" class="frota-botao" id="nova-movimentacao">+ Registrar movimentação</button><button type="button" class="frota-botao frota-secundario" data-abrir-relatorio="estoque">Relatório PDF</button><button type="button" class="frota-botao frota-secundario frota-icone-atualizar" id="atualizar-estoque" title="Atualizar" aria-label="Atualizar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 7v5h-5M4 17v-5h5M5.6 9a7 7 0 0 1 11.8-2L20 12M4 12l2.6 5a7 7 0 0 0 11.8-2"/></svg></button></div><div id="form-mov-estoque"></div><p class="frota-status" id="status-estoque">Carregando estoque...</p><div class="frota-tabela-wrap"><table class="frota-tabela"><thead><tr><th>Peça</th><th>Unidade</th><th>Estoque mínimo</th><th>Saldo</th><th>Situação</th></tr></thead><tbody id="lista-saldo-estoque"></tbody></table></div><div id="modal-recentes-estoque" class="frota-modal-backdrop" hidden><section class="frota-modal" role="dialog" aria-modal="true" aria-labelledby="titulo-recentes-estoque"><button type="button" class="frota-modal-fechar" data-fechar-modal aria-label="Fechar">×</button><h3 id="titulo-recentes-estoque">Movimentações recentes</h3><div class="frota-tabela-wrap"><table class="frota-tabela"><thead><tr><th>Data</th><th>Peça</th><th>Tipo</th><th>Quantidade</th><th>Valor unitário</th><th>Veículo</th></tr></thead><tbody id="lista-mov-estoque"></tbody></table></div></section></div>`;
       const status=document.getElementById('status-estoque'),saldo=document.getElementById('lista-saldo-estoque'),mov=document.getElementById('lista-mov-estoque'),form=document.getElementById('form-mov-estoque');
       const fmt=n=>Number(n||0).toLocaleString('pt-BR',{maximumFractionDigits:3});
       async function carregar(){
@@ -363,12 +405,12 @@ document.addEventListener("DOMContentLoaded", async () => {
         form.querySelector('#cancelar-mov').onclick=()=>form.replaceChildren();
         form.querySelector('form').onsubmit=async e=>{e.preventDefault();const f=e.currentTarget,fd=new FormData(f),data={part_id:fd.get('part_id'),movement_type:fd.get('movement_type'),quantity:Number(fd.get('quantity')),movement_date:fd.get('movement_date'),unit_value:Number(fd.get('unit_value')),vehicle_id:fd.get('vehicle_id')||null,reference:fd.get('reference')||null,notes:fd.get('notes')||null};const msg=f.querySelector('.frota-status');const {error}=await supabaseClient.from('stock_movements').insert(data);if(error){msg.textContent=`Erro ao salvar: ${error.message}`;return;}form.replaceChildren();await carregar();};
       };
-      document.getElementById('atualizar-estoque').onclick=carregar; await carregar();
+      conteudoModulo.querySelectorAll('[data-abrir-relatorio]').forEach(b=>b.onclick=()=>abrirModalRelatorio(b.dataset.abrirRelatorio)); document.getElementById('atualizar-estoque').onclick=carregar; document.getElementById('recentes-estoque').onclick=()=>document.getElementById('modal-recentes-estoque').hidden=false; document.querySelectorAll('[data-fechar-modal]').forEach(b=>b.onclick=()=>b.closest('.frota-modal-backdrop').hidden=true); await carregar();
     }
 
     async function renderizarFinanceiro() {
       if (!podeFinanceiro) { conteudoModulo.innerHTML='<p class="frota-status">Acesso restrito. Solicite autorização ao administrador.</p>'; return; }
-      conteudoModulo.innerHTML='<div class="frota-acoes"><button type="button" class="frota-botao frota-secundario" id="atualizar-financeiro">Atualizar</button></div><p class="frota-status" id="status-financeiro">Carregando despesas...</p><div id="lista-financeiro"></div>';
+      conteudoModulo.innerHTML='<div class="frota-acoes"><button type="button" class="frota-botao frota-secundario frota-icone-atualizar" id="atualizar-financeiro" title="Atualizar" aria-label="Atualizar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 7v5h-5M4 17v-5h5M5.6 9a7 7 0 0 1 11.8-2L20 12M4 12l2.6 5a7 7 0 0 0 11.8-2"/></svg></button></div><p class="frota-status" id="status-financeiro">Carregando despesas...</p><div id="lista-financeiro"></div>';
       const status=document.getElementById('status-financeiro'),lista=document.getElementById('lista-financeiro');
       async function carregar(){
         status.textContent='Consultando despesas registradas...';
@@ -396,7 +438,7 @@ document.addEventListener("DOMContentLoaded", async () => {
           <div class="frota-acoes frota-filtros-graficos">
             <label>Formato do gráfico<select id="tipo-grafico"><option value="pizza">Pizza</option><option value="coluna">Coluna</option></select></label>
             <label>Dados exibidos<select id="dados-grafico"><option value="consumo">Consumo</option><option value="manutencao">Manutenção</option><option value="ambos">Ambos</option></select></label>
-            <button type="button" class="frota-botao frota-secundario" id="atualizar-graficos">Atualizar</button>
+            <button type="button" class="frota-botao frota-secundario" id="botao-graficos">Gráficos</button><button type="button" class="frota-botao frota-secundario frota-icone-atualizar" id="atualizar-graficos" title="Atualizar" aria-label="Atualizar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 7v5h-5M4 17v-5h5M5.6 9a7 7 0 0 1 11.8-2L20 12M4 12l2.6 5a7 7 0 0 0 11.8-2"/></svg></button>
           </div>
           <p class="frota-status" id="status-graficos">Carregando dados reais do Supabase...</p>
           <div id="painel-graficos" class="frota-graficos-grid"></div>
@@ -463,6 +505,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       document.getElementById('tipo-grafico').addEventListener('change',()=>desenhar(dados));
       document.getElementById('dados-grafico').addEventListener('change',()=>desenhar(dados));
       document.getElementById('atualizar-graficos').addEventListener('click',async()=>{dados=await carregarDados();desenhar(dados);});
+      document.getElementById('botao-graficos').addEventListener('click',()=>document.getElementById('painel-graficos').scrollIntoView({behavior:'smooth',block:'start'}));
     }
 
     function abrirModulo(nomeModulo) {
