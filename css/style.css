@@ -1063,3 +1063,13 @@ body.tema-escuro .frota-icone-acao.frota-excluir { color:#ff9188; }
 .frota-relatorios-modulos > p { margin: 0 0 10px; color: var(--texto-secundario, #64748b); }
 .frota-botoes-relatorio-modulo { display:flex; flex-wrap:wrap; gap:10px; }
 .frota-relatorios-linha .frota-acoes-espacador { flex:1 1 auto; }
+
+/* Relatórios: módulos em faixa horizontal rolável e conteúdo selecionado abaixo. */
+.frota-botoes-relatorio-modulo{display:flex;flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;gap:10px;padding:4px 2px 12px;scrollbar-width:thin;-webkit-overflow-scrolling:touch}
+.frota-botoes-relatorio-modulo .frota-botao{flex:0 0 auto;white-space:nowrap}
+.frota-botoes-relatorio-modulo .frota-botao.ativo{outline:2px solid var(--primary,#2563eb);outline-offset:1px}
+.frota-relatorio-modulo-painel{margin:18px 0;padding:14px;border:1px solid var(--border,#dce5df);border-radius:10px;background:var(--surface,#fff)}
+.frota-relatorio-modulo-painel h3{margin:0 0 14px}
+.frota-relatorio-tipo,.frota-gerar-pdf-linha label{display:flex;flex-direction:column;gap:6px;max-width:320px;margin:10px 0;font-weight:600}
+.frota-relatorio-modulo-painel select{font:inherit;padding:9px;border:1px solid var(--border,#dce5df);border-radius:8px;background:var(--surface,#fff);color:inherit}
+.frota-relatorios-graficos[hidden],.frota-relatorio-modulo-painel[hidden]{display:none!important}
