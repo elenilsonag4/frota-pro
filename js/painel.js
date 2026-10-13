@@ -176,52 +176,155 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     async function renderizarAbastecimentos() {
-      conteudoModulo.innerHTML = `<div class="frota-acoes"><button type="button" class="frota-botao" id="novo-abastecimento">+ Novo abastecimento</button><button type="button" class="frota-botao frota-secundario" id="atualizar-abastecimentos">Atualizar</button></div><div id="form-abastecimento-area"></div><p class="frota-status" id="status-abastecimentos">Carregando abastecimentos...</p><div class="frota-tabela-wrap"><table class="frota-tabela"><thead><tr><th>Data</th><th>Veículo</th><th>KM</th><th>Litros</th><th>Valor</th><th>Motorista</th><th>Consumo (km/l)</th></tr></thead><tbody id="lista-abastecimentos"></tbody></table></div>`;
+      conteudoModulo.innerHTML = `<div class="frota-acoes"><button type="button" class="frota-botao" id="novo-abastecimento">+ Novo abastecimento</button><button type="button" class="frota-botao frota-secundario" id="atualizar-abastecimentos">Atualizar</button></div><div id="form-abastecimento-area"></div><p class="frota-status" id="status-abastecimentos">Carregando abastecimentos...</p><div class="frota-tabela-wrap"><table class="frota-tabela"><thead><tr><th>Data</th><th>Veículo</th><th>KM</th><th>Litros</th><th>Valor</th><th>Motorista</th><th>Consumo (km/l)</th><th>Ações</th></tr></thead><tbody id="lista-abastecimentos"></tbody></table></div>`;
       const areaForm = document.getElementById("form-abastecimento-area");
       const status = document.getElementById("status-abastecimentos");
       const tbody = document.getElementById("lista-abastecimentos");
-      let veiculos = [], motoristas = [];
+      let veiculos = [], motoristas = [], registrosAtuais = [];
       try { veiculos = await carregarVeiculos(); } catch (e) { console.error(e); }
       try { motoristas = await carregarMotoristas(); } catch (e) { console.error('Motoristas não carregados:', e); }
       const nomes = new Map(veiculos.map(v => [v.id, v.name || v.brand || v.plate]));
+
       const carregar = async () => {
         status.textContent = "Carregando abastecimentos...";
         try {
           const { data, error } = await supabaseClient.from("fuel_entries")
-            .select("id, vehicle_id, driver_id, entry_date, odometer, liters, total_value, consumption")
+            .select("id, vehicle_id, driver_id, entry_date, odometer, liters, total_value, consumption, created_at")
             .order("entry_date", { ascending: false }).order("created_at", { ascending: false });
           if (error) throw error;
+          registrosAtuais = data || [];
           const nomesMotoristas = new Map(motoristas.map(m => [m.id, m.name || m.full_name || "Motorista"]));
-          tbody.innerHTML = (data || []).map(r => `<tr><td>${escapar(r.entry_date)}</td><td>${escapar(nomes.get(r.vehicle_id) || "Veículo não localizado")}</td><td>${formatarNumero(r.odometer, 0)}</td><td>${formatarNumero(r.liters)}</td><td>R$ ${formatarNumero(r.total_value)}</td><td>${escapar(nomesMotoristas.get(r.driver_id) || "—")}</td><td>${r.consumption == null ? "INÍCIO" : formatarNumero(r.consumption)}</td></tr>`).join("");
-          status.textContent = data?.length ? `${data.length} abastecimento(s) registrado(s).` : "Nenhum abastecimento cadastrado ainda.";
+          tbody.innerHTML = registrosAtuais.map(r => `<tr><td>${escapar(formatarDataLocal(r.entry_date))}</td><td>${escapar(nomes.get(r.vehicle_id) || "Veículo não localizado")}</td><td>${formatarNumero(r.odometer, 0)}</td><td>${formatarNumero(r.liters)}</td><td>R$ ${formatarNumero(r.total_value)}</td><td>${escapar(nomesMotoristas.get(r.driver_id) || "—")}</td><td>${r.consumption == null ? "INÍCIO" : formatarNumero(r.consumption)}</td><td class="frota-acoes-linha"><button type="button" class="frota-icone-acao" data-editar-abastecimento="${escapar(r.id)}" title="Editar abastecimento" aria-label="Editar abastecimento">✏️</button><button type="button" class="frota-icone-acao frota-excluir" data-excluir-abastecimento="${escapar(r.id)}" title="Excluir abastecimento" aria-label="Excluir abastecimento">🗑️</button></td></tr>`).join("");
+          status.textContent = registrosAtuais.length ? `${registrosAtuais.length} abastecimento(s) registrado(s).` : "Nenhum abastecimento cadastrado ainda.";
+          tbody.querySelectorAll('[data-editar-abastecimento]').forEach(b => b.addEventListener('click', () => abrirForm(registrosAtuais.find(r => r.id === b.dataset.editarAbastecimento))));
+          tbody.querySelectorAll('[data-excluir-abastecimento]').forEach(b => b.addEventListener('click', async () => {
+            const registro = registrosAtuais.find(r => r.id === b.dataset.excluirAbastecimento);
+            if (!registro || !confirm('Excluir este abastecimento? O consumo do veículo será recalculado. Esta ação não poderá ser desfeita.')) return;
+            b.disabled = true;
+            try {
+              const { error } = await supabaseClient.from('fuel_entries').delete().eq('id', registro.id);
+              if (error) throw error;
+              await recalcularConsumoVeiculo(registro.vehicle_id);
+              await carregar();
+            } catch (e) {
+              console.error(e); alert(`Não foi possível excluir o abastecimento. Verifique as permissões da tabela fuel_entries. ${e.message || ''}`); b.disabled = false;
+            }
+          }));
         } catch (e) {
           console.error(e); status.textContent = "Não foi possível carregar abastecimentos. Confira as permissões RLS da tabela fuel_entries.";
         }
       };
-      const abrirForm = () => {
+
+      const abrirForm = (registro = null) => {
         if (!veiculos.length) { areaForm.innerHTML = `<p class="frota-status">Cadastre primeiro um veículo na aba Veículos.</p>`; return; }
-        areaForm.innerHTML = `<form id="form-abastecimento" class="frota-form"><h4>Novo abastecimento</h4><div class="frota-campos"><label>Veículo<select name="vehicle_id" required>${veiculos.map(v => `<option value="${escapar(v.id)}">${escapar(v.name || v.brand || v.plate)} — ${escapar(v.plate)}</option>`).join("")}</select></label><label>Data<input name="entry_date" type="date" required></label><label>KM atual<input name="odometer" type="number" min="0" step="0.1" required></label><label>Litros atuais<input name="liters" type="number" min="0.001" step="0.001" required></label><label>Valor total (R$)<input name="total_value" type="number" min="0" step="0.01" required></label><label>Motorista<select name="driver_id" required><option value="">Selecione o motorista</option>${motoristas.map(m => `<option value="${escapar(m.id)}">${escapar(m.name || m.full_name || "Motorista")}</option>`).join("")}</select></label></div><div class="frota-acoes"><button class="frota-botao" type="submit">Salvar abastecimento</button><button class="frota-botao frota-secundario" id="cancelar-abastecimento" type="button">Cancelar</button></div><p class="frota-status" id="form-abastecimento-status"></p></form>`;
-        const dateInput = areaForm.querySelector('[name="entry_date"]');
-        dateInput.value = new Date().toLocaleDateString("en-CA");
+        const editando = Boolean(registro);
+        areaForm.innerHTML = `<form id="form-abastecimento" class="frota-form"><h4>${editando ? 'Editar abastecimento' : 'Novo abastecimento'}</h4><div class="frota-campos"><label>Veículo<select name="vehicle_id" required>${veiculos.map(v => `<option value="${escapar(v.id)}">${escapar(v.name || v.brand || v.plate)} — ${escapar(v.plate)}</option>`).join("")}</select></label><label>Data<input name="entry_date" type="date" required></label><label>KM atual<input name="odometer" type="number" min="0" step="0.1" required></label><label>Litros atuais<input name="liters" type="number" min="0.001" step="0.001" required></label><label>Valor total (R$)<input name="total_value" type="number" min="0" step="0.01" required></label><label>Motorista<select name="driver_id" required><option value="">Selecione o motorista</option>${motoristas.map(m => `<option value="${escapar(m.id)}">${escapar(m.name || m.full_name || "Motorista")}</option>`).join("")}</select></label></div><div class="frota-acoes"><button class="frota-botao" type="submit">${editando ? 'Salvar alterações' : 'Salvar abastecimento'}</button><button class="frota-botao frota-secundario" id="cancelar-abastecimento" type="button">Cancelar</button></div><p class="frota-status" id="form-abastecimento-status"></p></form>`;
+        const form = document.getElementById('form-abastecimento');
+        if (registro) {
+          form.elements.vehicle_id.value = registro.vehicle_id || '';
+          form.elements.driver_id.value = registro.driver_id || '';
+          form.elements.entry_date.value = registro.entry_date || '';
+          form.elements.odometer.value = registro.odometer ?? '';
+          form.elements.liters.value = registro.liters ?? '';
+          form.elements.total_value.value = registro.total_value ?? '';
+        } else {
+          form.elements.entry_date.value = new Date().toLocaleDateString("en-CA");
+        }
         document.getElementById("cancelar-abastecimento").addEventListener("click", () => areaForm.replaceChildren());
-        document.getElementById("form-abastecimento").addEventListener("submit", async (event) => {
-          event.preventDefault(); const form = event.currentTarget; const fd = new FormData(form);
-          const aviso = document.getElementById("form-abastecimento-status"); const submit = form.querySelector('[type="submit"]');
-          const dados = { vehicle_id: fd.get("vehicle_id"), driver_id: fd.get("driver_id"), entry_date: fd.get("entry_date"), odometer: Number(fd.get("odometer")), liters: Number(fd.get("liters")), total_value: Number(fd.get("total_value")), created_by: usuario.id };
+        form.addEventListener("submit", async (event) => {
+          event.preventDefault();
+          const fd = new FormData(form), aviso = document.getElementById("form-abastecimento-status"), submit = form.querySelector('[type="submit"]');
+          const dados = { vehicle_id: String(fd.get("vehicle_id")), driver_id: String(fd.get("driver_id")), entry_date: String(fd.get("entry_date")), odometer: Number(fd.get("odometer")), liters: Number(fd.get("liters")), total_value: Number(fd.get("total_value")) };
           submit.disabled = true; aviso.textContent = "Salvando e recalculando consumo...";
           try {
-            const { error } = await supabaseClient.from("fuel_entries").insert(dados);
-            if (error) throw error;
+            let erro;
+            if (editando) {
+              const resultado = await supabaseClient.from("fuel_entries").update(dados).eq("id", registro.id);
+              erro = resultado.error;
+            } else {
+              dados.created_by = usuario.id;
+              const resultado = await supabaseClient.from("fuel_entries").insert(dados);
+              erro = resultado.error;
+            }
+            if (erro) throw erro;
+            if (editando && registro.vehicle_id !== dados.vehicle_id) await recalcularConsumoVeiculo(registro.vehicle_id);
             await recalcularConsumoVeiculo(dados.vehicle_id);
             areaForm.replaceChildren(); await carregar();
           } catch (e) {
-            console.error(e); aviso.textContent = "O abastecimento pode ter sido salvo, mas houve falha ao recalcular. Atualize a tela e confira as políticas RLS de fuel_entries.";
+            console.error(e); aviso.textContent = `Não foi possível salvar ou recalcular. Confira as permissões RLS de fuel_entries. ${e.message || ''}`;
             submit.disabled = false;
           }
         });
       };
-      document.getElementById("novo-abastecimento").addEventListener("click", abrirForm);
+      document.getElementById("novo-abastecimento").addEventListener("click", () => abrirForm());
       document.getElementById("atualizar-abastecimentos").addEventListener("click", carregar);
+      await carregar();
+    }
+
+
+    async function renderizarManutencao(tipo) {
+      const config = {
+        mecanica: { tabela: "mechanical_services", titulo: "Mecânica", plural: "serviço mecânico", campos: [
+          ["service_date","Data","date",true],["vehicle_id","Veículo","vehicle",true],["odometer","Quilometragem (KM)","number",false],["description","Serviço (motor/parte elétrica)","text",true],["provider","Oficina / responsável","text",false],["total_value","Valor total (R$)","number",true],["status","Situação","select",true],["notes","Observações","textarea",false]
+        ], colunas:["service_date","vehicle_id","odometer","description","provider","total_value","status"] },
+        revisao: { tabela:"revisions", titulo:"Revisão", plural:"revisão", campos:[
+          ["revision_type","Tipo","selecttipo",true],["vehicle_id","Veículo","vehicle",true],["description","Itens/serviços (óleo, filtros, freios)","text",true],["due_date","Data prevista","date",false],["due_odometer","KM previsto","number",false],["completed_date","Data realizada","date",false],["completed_odometer","KM realizado","number",false],["status","Situação","select",true],["total_value","Valor total (R$)","number",true],["notes","Observações","textarea",false]
+        ], colunas:["revision_type","vehicle_id","description","due_date","due_odometer","completed_date","completed_odometer","status","total_value"] }
+      }[tipo];
+      if (!config) return;
+      conteudoModulo.innerHTML = `<div class="frota-acoes">${tipo==="revisao" ? `<button type="button" class="frota-botao seletor-revisao" data-tipo="Preventiva">Preventiva</button><button type="button" class="frota-botao frota-secundario seletor-revisao" data-tipo="Corretiva">Corretiva</button>` : ""}<button type="button" class="frota-botao" id="novo-manutencao">+ Novo ${config.plural}</button><button type="button" class="frota-botao frota-secundario" id="atualizar-manutencao">Atualizar</button></div><div id="form-manutencao-area"></div><p class="frota-status" id="status-manutencao">Carregando...</p><div class="frota-tabela-wrap"><table class="frota-tabela"><thead><tr><th>Data</th><th>Veículo</th><th>Descrição</th><th>KM</th><th>Valor</th><th>Situação</th><th>Ações</th></tr></thead><tbody id="lista-manutencao"></tbody></table></div>`;
+      let tipoFiltro = "Preventiva";
+      const area=document.getElementById("form-manutencao-area"), status=document.getElementById("status-manutencao"), tbody=document.getElementById("lista-manutencao");
+      let veiculos=[];
+      try { veiculos=await carregarVeiculos(); } catch(e) { status.textContent="Não foi possível carregar veículos."; return; }
+      const nomes=new Map(veiculos.map(v=>[v.id,v.name||v.brand||v.plate||"Veículo"]));
+      const fmtData=v=>v?new Date(v+"T00:00:00").toLocaleDateString("pt-BR"):"—";
+      const valor=v=>v==null?"—":`R$ ${formatarNumero(v)}`;
+      async function carregar() {
+        status.textContent="Carregando...";
+        let q=supabaseClient.from(config.tabela).select("*").order(tipo==="mecanica"?"service_date":tipo==="revisao"?"due_date":"created_at",{ascending:false});
+        if(tipo==="revisao") q=q.eq("revision_type",tipoFiltro);
+        const {data,error}=await q;
+        if(error){status.textContent=`Erro ao carregar: ${error.message}`;return;}
+        tbody.innerHTML=(data||[]).map(r=>`<tr><td>${escapar(fmtData(r.service_date||r.due_date||r.completed_date))}</td><td>${escapar(nomes.get(r.vehicle_id)||"—")}</td><td>${escapar(r.description||"—")}</td><td>${escapar(r.odometer??r.completed_odometer??r.due_odometer??"—")}</td><td>${escapar(valor(r.total_value))}</td><td>${escapar(r.status||"—")}</td><td class="frota-acoes-linha"><button type="button" class="frota-icone-acao" data-edit="${escapar(r.id)}" title="Editar">✏️</button><button type="button" class="frota-icone-acao frota-excluir" data-del="${escapar(r.id)}" title="Excluir">🗑️</button></td></tr>`).join("");
+        status.textContent=(data||[]).length?`${data.length} registro(s).`:"Nenhum registro encontrado.";
+      }
+      function abrirForm(registro=null){
+        const campos=config.campos.map(([key,label,type,required])=>{
+          const val=registro?.[key]??(key==="status"?"Pendente":key==="revision_type"?tipoFiltro:"");
+          let input="";
+          if(type==="vehicle") input=`<select name="${key}" required><option value="">Selecione</option>${veiculos.map(v=>`<option value="${escapar(v.id)}" ${val===v.id?"selected":""}>${escapar(v.name||v.brand||v.plate||"Veículo")}</option>`).join("")}</select>`;
+          else if(type==="select") input=`<select name="${key}" ${required?"required":""}><option value="Pendente" ${val==="Pendente"?"selected":""}>Pendente</option><option value="Em andamento" ${val==="Em andamento"?"selected":""}>Em andamento</option><option value="Concluído" ${val==="Concluído"?"selected":""}>Concluído</option><option value="Cancelado" ${val==="Cancelado"?"selected":""}>Cancelado</option></select>`;
+          else if(type==="selecttipo") input=`<select name="${key}" required><option ${val==="Preventiva"?"selected":""}>Preventiva</option><option ${val==="Corretiva"?"selected":""}>Corretiva</option></select>`;
+          else if(type==="textarea") input=`<textarea name="${key}">${escapar(val)}</textarea>`;
+          else input=`<input name="${key}" type="${type}" ${type==="number"?'step="0.01" min="0"':""} value="${escapar(val)}" ${required?"required":""}>`;
+          return `<label>${label}${input}</label>`;
+        }).join("");
+        area.innerHTML=`<form class="frota-form"><h3>${registro?"Editar":"Novo"} ${config.plural}</h3><div class="frota-campos">${campos}</div><p class="frota-status" id="status-form-manutencao"></p><div class="frota-acoes"><button class="frota-botao" type="submit">Salvar</button><button class="frota-botao frota-secundario" id="cancelar-manutencao" type="button">Cancelar</button></div></form>`;
+        area.querySelector("#cancelar-manutencao").onclick=()=>area.replaceChildren();
+        area.querySelector("form").onsubmit=async e=>{
+          e.preventDefault(); const form=e.currentTarget, fd=new FormData(form), dados={};
+          for(const [key] of config.campos){let v=fd.get(key); if(["odometer","due_odometer","completed_odometer","total_value"].includes(key)) v=v===""?null:Number(v); else if(["due_date","completed_date","service_date"].includes(key)) v=v||null; else v=String(v??"").trim()||null; dados[key]=v;}
+          if(!registro) dados.created_by=usuario.id;
+          const aviso=form.querySelector("#status-form-manutencao"); aviso.textContent="Salvando...";
+          try {const result=registro?await supabaseClient.from(config.tabela).update(dados).eq("id",registro.id):await supabaseClient.from(config.tabela).insert(dados); if(result.error) throw result.error; area.replaceChildren(); await carregar();}
+          catch(err){aviso.textContent=`Erro ao salvar: ${err.message}`;}
+        };
+      }
+      document.getElementById("novo-manutencao").onclick=()=>abrirForm();
+      document.getElementById("atualizar-manutencao").onclick=carregar;
+      conteudoModulo.querySelectorAll(".seletor-revisao").forEach(b=>b.onclick=()=>{tipoFiltro=b.dataset.tipo;conteudoModulo.querySelectorAll(".seletor-revisao").forEach(x=>x.classList.toggle("frota-secundario",x!==b));carregar();});
+      tbody.onclick=async e=>{const edit=e.target.closest("[data-edit]"), del=e.target.closest("[data-del]"); if(edit){const {data,error}=await supabaseClient.from(config.tabela).select("*").eq("id",edit.dataset.edit).single();if(error){alert(error.message);return;}abrirForm(data);} if(del&&confirm("Confirma excluir este registro?")){const {error}=await supabaseClient.from(config.tabela).delete().eq("id",del.dataset.del);if(error)alert(`Não foi possível excluir: ${error.message}`);else carregar();}};
+      await carregar();
+    }
+
+    async function renderizarPecas() {
+      conteudoModulo.innerHTML=`<div class="frota-acoes"><button class="frota-botao" id="nova-peca" type="button">+ Nova peça</button><button class="frota-botao frota-secundario" id="atualizar-pecas" type="button">Atualizar</button></div><div id="form-peca-area"></div><p class="frota-status" id="status-pecas">Carregando...</p><div class="frota-tabela-wrap"><table class="frota-tabela"><thead><tr><th>Código</th><th>Peça</th><th>Unidade</th><th>Estoque mínimo</th><th>Ativa</th><th>Ações</th></tr></thead><tbody id="lista-pecas"></tbody></table></div><p>Esta tela cadastra o catálogo de peças. O histórico de instalação por veículo será implementado separadamente para não misturar estoque com serviços.</p>`;
+      const area=document.getElementById("form-peca-area"),status=document.getElementById("status-pecas"),tbody=document.getElementById("lista-pecas");
+      async function carregar(){const {data,error}=await supabaseClient.from("parts").select("*").order("name");if(error){status.textContent=`Erro ao carregar: ${error.message}`;return;}tbody.innerHTML=(data||[]).map(p=>`<tr><td>${escapar(p.code||"—")}</td><td>${escapar(p.name)}</td><td>${escapar(p.unit)}</td><td>${escapar(p.min_stock)}</td><td>${p.active?"Sim":"Não"}</td><td class="frota-acoes-linha"><button class="frota-icone-acao" data-edit-peca="${escapar(p.id)}" type="button">✏️</button><button class="frota-icone-acao frota-excluir" data-del-peca="${escapar(p.id)}" type="button">🗑️</button></td></tr>`).join("");status.textContent=(data||[]).length?`${data.length} peça(s).`:"Nenhuma peça cadastrada.";}
+      function abrirForm(p=null){area.innerHTML=`<form class="frota-form"><h3>${p?"Editar":"Nova"} peça</h3><div class="frota-campos"><label>Código<input name="code" value="${escapar(p?.code||"")}"></label><label>Nome da peça<input name="name" required value="${escapar(p?.name||"")}"></label><label>Unidade<input name="unit" required value="${escapar(p?.unit||"unidade")}"></label><label>Estoque mínimo<input name="min_stock" type="number" min="0" step="0.01" required value="${escapar(p?.min_stock??0)}"></label><label>Ativa<select name="active"><option value="true" ${p?.active!==false?"selected":""}>Sim</option><option value="false" ${p?.active===false?"selected":""}>Não</option></select></label><label>Observações<textarea name="notes">${escapar(p?.notes||"")}</textarea></label></div><p class="frota-status"></p><div class="frota-acoes"><button class="frota-botao" type="submit">Salvar</button><button class="frota-botao frota-secundario" id="cancelar-peca" type="button">Cancelar</button></div></form>`;area.querySelector("#cancelar-peca").onclick=()=>area.replaceChildren();area.querySelector("form").onsubmit=async e=>{e.preventDefault();const f=e.currentTarget,fd=new FormData(f),dados={code:String(fd.get("code")||"").trim()||null,name:String(fd.get("name")||"").trim(),unit:String(fd.get("unit")||"unidade").trim(),min_stock:Number(fd.get("min_stock")||0),active:fd.get("active")==="true",notes:String(fd.get("notes")||"").trim()||null};const aviso=f.querySelector(".frota-status");try{const r=p?await supabaseClient.from("parts").update(dados).eq("id",p.id):await supabaseClient.from("parts").insert(dados);if(r.error)throw r.error;area.replaceChildren();await carregar();}catch(err){aviso.textContent=`Erro ao salvar: ${err.message}`;}};}
+      document.getElementById("nova-peca").onclick=()=>abrirForm();document.getElementById("atualizar-pecas").onclick=carregar;
+      tbody.onclick=async e=>{const ed=e.target.closest("[data-edit-peca]"),del=e.target.closest("[data-del-peca]");if(ed){const {data,error}=await supabaseClient.from("parts").select("*").eq("id",ed.dataset.editPeca).single();if(error){alert(error.message);return;}abrirForm(data);}if(del&&confirm("Confirma excluir esta peça do catálogo?")){const {error}=await supabaseClient.from("parts").delete().eq("id",del.dataset.delPeca);if(error)alert(`Não foi possível excluir: ${error.message}`);else carregar();}};
       await carregar();
     }
 
@@ -245,6 +348,9 @@ document.addEventListener("DOMContentLoaded", async () => {
       if (nomeModulo === "veiculos") renderizarVeiculos();
       if (nomeModulo === "motoristas") renderizarMotoristas();
       if (nomeModulo === "abastecimentos") renderizarAbastecimentos();
+      if (nomeModulo === "mecanica") renderizarManutencao("mecanica");
+      if (nomeModulo === "revisao") renderizarManutencao("revisao");
+      if (nomeModulo === "pecas") renderizarPecas();
     }
 
     botoesMenu.forEach((botao) => {
