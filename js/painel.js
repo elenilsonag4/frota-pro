@@ -328,6 +328,82 @@ document.addEventListener("DOMContentLoaded", async () => {
       await carregar();
     }
 
+    let graficosRelatorios = [];
+    async function renderizarRelatorios() {
+      conteudoModulo.innerHTML = `
+        <section class="frota-relatorios-graficos">
+          <div class="frota-acoes frota-filtros-graficos">
+            <label>Formato do gráfico<select id="tipo-grafico"><option value="pizza">Pizza</option><option value="coluna">Coluna</option></select></label>
+            <label>Dados exibidos<select id="dados-grafico"><option value="consumo">Consumo</option><option value="manutencao">Manutenção</option><option value="ambos">Ambos</option></select></label>
+            <button type="button" class="frota-botao frota-secundario" id="atualizar-graficos">Atualizar</button>
+          </div>
+          <p class="frota-status" id="status-graficos">Carregando dados reais do Supabase...</p>
+          <div id="painel-graficos" class="frota-graficos-grid"></div>
+        </section>`;
+      const status = document.getElementById('status-graficos');
+      const painel = document.getElementById('painel-graficos');
+      const moeda = n => Number(n || 0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+      async function buscar(tabela, campos) {
+        const {data,error}=await supabaseClient.from(tabela).select(campos);
+        if(error) throw new Error(`${tabela}: ${error.message}`);
+        return data || [];
+      }
+      async function carregarDados() {
+        status.textContent='Consultando abastecimentos e manutenção...';
+        try {
+          const [veiculos,abast,mecanica,revisoes,pecas]=await Promise.all([
+            buscar('vehicles','id,name,plate'),
+            buscar('fuel_entries','vehicle_id,consumption'),
+            buscar('mechanical_services','vehicle_id,total_value,service_date'),
+            buscar('revisions','vehicle_id,total_value,completed_date,due_date'),
+            buscar('stock_movements','part_id,movement_type,quantity,unit_value,movement_date,reference,notes')
+          ]);
+          const nomes=new Map(veiculos.map(v=>[String(v.id),v.name || v.plate || 'Veículo']));
+          const porVeiculo=new Map();
+          const linha=id=>{const k=String(id||'sem-veiculo');if(!porVeiculo.has(k))porVeiculo.set(k,{nome:nomes.get(k)||'Veículo não identificado',consumos:[],mecanica:0,revisao:0,pecas:0});return porVeiculo.get(k);};
+          abast.forEach(r=>{const x=linha(r.vehicle_id);if(Number(r.consumption)>0)x.consumos.push(Number(r.consumption));});
+          mecanica.forEach(r=>linha(r.vehicle_id).mecanica+=Number(r.total_value||0));
+          revisoes.forEach(r=>linha(r.vehicle_id).revisao+=Number(r.total_value||0));
+          // Movimentos de saída representam aplicação/consumo de estoque. Entradas não contam como despesa aplicada.
+          const saidas=pecas.filter(r=>/saida|saída|aplica|consumo|out/i.test(String(r.movement_type||'')) && /vehicle|veículo|placa|frota/i.test(String(r.reference||'')+' '+String(r.notes||'')));
+          // unit_value é o custo por unidade registrado no movimento.
+          saidas.forEach(r=>{const custo=Number(r.quantity||0)*Number(r.unit_value||0); if(custo>0){const texto=String(r.reference||'')+' '+String(r.notes||'');const v=veiculos.find(v=>texto.toLowerCase().includes(String(v.plate||'').toLowerCase())||texto.toLowerCase().includes(String(v.name||'').toLowerCase()));if(v)linha(v.id).pecas+=custo;}});
+          const linhas=[...porVeiculo.values()].sort((a,b)=>a.nome.localeCompare(b.nome,'pt-BR'));
+          return {linhas, avisos: ['fuel_entries.total_value/amount e stock_movements.vehicle_id dependem do esquema instalado.']};
+        } catch(e) { console.error(e); status.textContent=`Não foi possível montar os gráficos com os dados reais: ${e.message}. Confira os nomes das colunas e as permissões RLS.`; return null; }
+      }
+      function desenhar(dados) {
+        if(!dados)return;
+        graficosRelatorios.forEach(g=>g.destroy());graficosRelatorios=[];painel.replaceChildren();
+        const tipo=document.getElementById('tipo-grafico').value,modo=document.getElementById('dados-grafico').value;
+        const itens=dados.linhas;
+        const cores={consumo:'#3b82f6',mecanica:'#1d4ed8',revisao:'#60a5fa',pecas:'#93c5fd'};
+        function criarCartao(titulo, labels, datasets, pie=false){
+          const card=document.createElement('article');card.className='frota-grafico-card';
+          const h=document.createElement('h4');h.textContent=titulo;card.appendChild(h);
+          const wrap=document.createElement('div');wrap.className='frota-canvas-wrap';const canvas=document.createElement('canvas');canvas.setAttribute('aria-label',titulo);wrap.appendChild(canvas);card.appendChild(wrap);painel.appendChild(card);
+          const chart=new Chart(canvas,{type:pie?'pie':'bar',data:{labels,datasets:datasets.map(d=>({...d,backgroundColor:d.backgroundColor||cores[d.key]||'#3b82f6',borderWidth:1}))},options:{responsive:true,maintainAspectRatio:false,indexAxis:tipo==='coluna'?'x':'y',plugins:{legend:{position:pie?'bottom':'top'},tooltip:{callbacks:{label:c=>`${c.dataset.label||c.label}: ${c.dataset.key==='consumo'?Number(c.raw).toLocaleString('pt-BR',{maximumFractionDigits:2})+' km/l':moeda(c.raw)}`}}},scales:pie?{}:{x:{beginAtZero:true,stacked:false},y:{beginAtZero:true,stacked:false}}}});graficosRelatorios.push(chart);
+        }
+        if(modo==='consumo'||modo==='ambos'){
+          const vals=itens.map(x=>x.consumos.length?x.consumos.reduce((a,b)=>a+b,0)/x.consumos.length:0);
+          if(tipo==='pizza') criarCartao('Consumo médio por veículo (km/l)',itens.map(x=>x.nome),[{label:'Consumo médio',key:'consumo',data:vals,backgroundColor:itens.map((_,i)=>['#1d4ed8','#3b82f6','#60a5fa','#93c5fd','#bfdbfe'][i%5])}],true);
+          else criarCartao('Consumo médio por veículo (km/l)',itens.map(x=>x.nome),[{label:'Consumo médio (km/l)',key:'consumo',data:vals,backgroundColor:cores.consumo}],false);
+        }
+        if(modo==='manutencao'||modo==='ambos'){
+          const labels=itens.map(x=>x.nome), ds=[{label:'Mecânica',key:'mecanica',data:itens.map(x=>x.mecanica),backgroundColor:'#1d4ed8'},{label:'Revisão',key:'revisao',data:itens.map(x=>x.revisao),backgroundColor:'#3b82f6'},{label:'Peças',key:'pecas',data:itens.map(x=>x.pecas),backgroundColor:'#93c5fd'}];
+          if(tipo==='pizza'){
+            const soma=k=>itens.reduce((a,x)=>a+x[k],0);
+            criarCartao('Gastos de manutenção por categoria', ['Mecânica','Revisão','Peças'],[{label:'Gastos',key:'valor',data:[soma('mecanica'),soma('revisao'),soma('pecas')],backgroundColor:['#1d4ed8','#3b82f6','#93c5fd']}],true);
+          } else criarCartao('Gastos por veículo — categorias lado a lado',labels,ds,false);
+        }
+        status.textContent=itens.length?`Gráficos atualizados com ${itens.length} veículo(s). Consumo é média dos registros válidos; gastos são valores registrados.`:'Não há dados para exibir.';
+      }
+      let dados=await carregarDados();desenhar(dados);
+      document.getElementById('tipo-grafico').addEventListener('change',()=>desenhar(dados));
+      document.getElementById('dados-grafico').addEventListener('change',()=>desenhar(dados));
+      document.getElementById('atualizar-graficos').addEventListener('click',async()=>{dados=await carregarDados();desenhar(dados);});
+    }
+
     function abrirModulo(nomeModulo) {
       const modulo = modulos[nomeModulo];
       if (!modulo) return;
@@ -351,6 +427,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       if (nomeModulo === "mecanica") renderizarManutencao("mecanica");
       if (nomeModulo === "revisao") renderizarManutencao("revisao");
       if (nomeModulo === "pecas") renderizarPecas();
+      if (nomeModulo === "relatorios") renderizarRelatorios();
     }
 
     botoesMenu.forEach((botao) => {
