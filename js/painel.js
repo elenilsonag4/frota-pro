@@ -433,7 +433,8 @@ document.addEventListener("DOMContentLoaded", async () => {
             <button type="button" class="frota-botao" data-abrir-relatorio="estoque">Estoque</button>
           </div>
         </section>
-        <section class="frota-relatorios-graficos">
+        <section id="relatorio-modulo-painel" class="frota-relatorio-modulo-painel" hidden></section>
+        <section class="frota-relatorios-graficos" hidden>
           <div class="frota-acoes frota-filtros-graficos">
             <label>Formato do gráfico<select id="tipo-grafico"><option value="pizza">Pizza</option><option value="coluna">Coluna</option></select></label>
             <label>Dados exibidos<select id="dados-grafico"><option value="consumo">Consumo</option><option value="manutencao">Manutenção</option><option value="ambos">Ambos</option></select></label>
@@ -442,10 +443,37 @@ document.addEventListener("DOMContentLoaded", async () => {
           <p class="frota-status" id="status-graficos">Carregando dados reais do Supabase...</p>
           <div id="painel-graficos" class="frota-graficos-grid"></div>
         </section>`;
-      document.getElementById('botao-graficos-relatorios').onclick=()=>document.querySelector('.frota-relatorios-graficos').scrollIntoView({behavior:'smooth',block:'start'});
+      const secaoGraficos=conteudoModulo.querySelector('.frota-relatorios-graficos');
+      secaoGraficos.hidden=true;
+      document.getElementById('botao-graficos-relatorios').onclick=async()=>{
+        const abrir=secaoGraficos.hidden; secaoGraficos.hidden=!abrir;
+        if(abrir){ if(!secaoGraficos.dataset.carregado){ dados=await carregarDados(); desenhar(dados); secaoGraficos.dataset.carregado='1'; } secaoGraficos.scrollIntoView({behavior:'smooth',block:'start'}); }
+      };
+      const painelModulo=document.getElementById('relatorio-modulo-painel');
+      const nomesRelatorio={abastecimentos:'Abastecimentos',mecanica:'Mecânica',revisao:'Revisão',pecas:'Peças',estoque:'Estoque'};
       conteudoModulo.querySelectorAll('[data-abrir-relatorio]').forEach(botao => {
-        botao.addEventListener('click', () => abrirJanelaRelatorio(botao.dataset.abrirRelatorio));
+        botao.addEventListener('click', async () => {
+          const modulo=botao.dataset.abrirRelatorio;
+          conteudoModulo.querySelectorAll('[data-abrir-relatorio]').forEach(b=>b.classList.toggle('ativo',b===botao));
+          painelModulo.hidden=false;
+          painelModulo.innerHTML=`<h3>${nomesRelatorio[modulo]}</h3>${modulo==='revisao'?'<label class="frota-relatorio-tipo">Tipo de revisão<select id="relatorio-tipo-inline"><option>Preventiva</option><option>Corretiva</option><option>Ambos</option></select></label>':''}<div class="frota-gerar-pdf-linha"><label>Gerar PDF<select id="relatorio-pdf-tipo"><option value="">Escolha Geral ou Seletivo</option><option value="geral">Geral</option><option value="seletivo">Seletivo</option></select></label></div><p class="frota-status" id="status-tabela-relatorio">Carregando tabela…</p><div id="tabela-relatorio-inline" class="frota-tabela-wrap"></div>`;
+          const spec={abastecimentos:{table:'fuel_entries',date:'entry_date'},mecanica:{table:'mechanical_services',date:'service_date'},revisao:{table:'revisions',date:'completed_date'},pecas:{table:'stock_movements',date:'movement_date'},estoque:{table:'stock_balances',date:'name'}}[modulo];
+          const statusTabela=document.getElementById('status-tabela-relatorio'), destino=document.getElementById('tabela-relatorio-inline');
+          try{
+            let q=supabaseClient.from(spec.table).select('*');
+            if(modulo==='revisao'){const tipo=document.getElementById('relatorio-tipo-inline').value;if(tipo!=='Ambos')q=q.eq('revision_type',tipo);}
+            const {data,error}=await q;if(error)throw error;let rows=data||[];
+            if(spec.date)rows.sort((a,b)=>String(b[spec.date]||'').localeCompare(String(a[spec.date]||'')));
+            const keys=rows.length?Object.keys(rows[0]).filter(k=>!['id','created_by','updated_at'].includes(k)):[];
+            const fmt=k=>k.replace(/_/g,' ').replace(/\b\w/g,c=>c.toUpperCase());
+            const cell=(r,k)=>{const v=r[k];return v==null||v===''?'—':typeof v==='object'?JSON.stringify(v):String(v)};
+            destino.innerHTML=rows.length?`<table class="frota-tabela"><thead><tr>${keys.map(k=>`<th>${escapar(fmt(k))}</th>`).join('')}</tr></thead><tbody>${rows.map(r=>`<tr>${keys.map(k=>`<td>${escapar(cell(r,k))}</td>`).join('')}</tr>`).join('')}</tbody></table>`:'<p>Nenhum registro encontrado.</p>';
+            statusTabela.textContent=`${rows.length} registro(s).`;
+          }catch(e){console.error(e);statusTabela.textContent='Não foi possível carregar a tabela: '+e.message;}
+          document.getElementById('relatorio-pdf-tipo').onchange=e=>{const tipo=e.target.value;if(tipo){abrirJanelaRelatorio(modulo);setTimeout(()=>document.querySelector(`#frota-modal-relatorio [data-relatorio=\"${tipo}\"]`)?.click(),0);}e.target.value='';};
+        });
       });
+      let dados=null;
       const status = document.getElementById('status-graficos');
       const painel = document.getElementById('painel-graficos');
       const moeda = n => Number(n || 0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
@@ -504,7 +532,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
         status.textContent=itens.length?`Gráficos atualizados com ${itens.length} veículo(s). Consumo é média dos registros válidos; gastos são valores registrados.`:'Não há dados para exibir.';
       }
-      let dados=await carregarDados();desenhar(dados);
       document.getElementById('tipo-grafico').addEventListener('change',()=>desenhar(dados));
       document.getElementById('dados-grafico').addEventListener('change',()=>desenhar(dados));
       document.getElementById('atualizar-graficos').addEventListener('click',async()=>{dados=await carregarDados();desenhar(dados);});
