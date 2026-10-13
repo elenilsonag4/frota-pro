@@ -33,7 +33,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     const usuario = data.session.user;
     const { data: perfil, error: erroPerfil } = await supabaseClient
       .from("profiles")
-      .select("full_name, role, active, can_edit")
+      .select("full_name, role, active, can_edit, can_access_finance")
       .eq("id", usuario.id)
       .maybeSingle();
 
@@ -55,8 +55,15 @@ document.addEventListener("DOMContentLoaded", async () => {
       mecanica: { titulo: "Mecânica", mensagem: "Área de serviços mecânicos e elétricos." },
       revisao: { titulo: "Revisão", mensagem: "Área de revisões preventivas e corretivas." },
       pecas: { titulo: "Peças", mensagem: "Área de peças e serviços de substituição." },
+      estoque: { titulo: "Estoque", mensagem: "Entradas, saídas e saldo de peças." },
+      financeiro: { titulo: "Financeiro", mensagem: "Despesas agrupadas por veículo." },
       relatorios: { titulo: "Relatórios", mensagem: "Área de relatórios de abastecimentos e manutenção." }
     };
+
+    const menuFinanceiro = document.getElementById("menu-financeiro");
+    const perfilAdmin = /^(admin|administrador|administrator)$/i.test(String(perfil.role || ""));
+    const podeFinanceiro = perfilAdmin || perfil.can_access_finance === true;
+    if (menuFinanceiro) menuFinanceiro.hidden = !podeFinanceiro;
 
     let moduloAtual = "inicio";
     const formatarNumero = (valor, casas = 2) => Number(valor).toLocaleString("pt-BR", {
@@ -328,6 +335,60 @@ document.addEventListener("DOMContentLoaded", async () => {
       await carregar();
     }
 
+    async function renderizarEstoque() {
+      conteudoModulo.innerHTML = `<div class="frota-acoes"><button type="button" class="frota-botao" id="nova-movimentacao">+ Registrar movimentação</button><button type="button" class="frota-botao frota-secundario" id="atualizar-estoque">Atualizar</button></div><div id="form-mov-estoque"></div><p class="frota-status" id="status-estoque">Carregando estoque...</p><div class="frota-tabela-wrap"><table class="frota-tabela"><thead><tr><th>Peça</th><th>Unidade</th><th>Estoque mínimo</th><th>Saldo</th><th>Situação</th></tr></thead><tbody id="lista-saldo-estoque"></tbody></table></div><h3>Movimentações recentes</h3><div class="frota-tabela-wrap"><table class="frota-tabela"><thead><tr><th>Data</th><th>Peça</th><th>Tipo</th><th>Quantidade</th><th>Valor unitário</th><th>Veículo</th></tr></thead><tbody id="lista-mov-estoque"></tbody></table></div>`;
+      const status=document.getElementById('status-estoque'),saldo=document.getElementById('lista-saldo-estoque'),mov=document.getElementById('lista-mov-estoque'),form=document.getElementById('form-mov-estoque');
+      const fmt=n=>Number(n||0).toLocaleString('pt-BR',{maximumFractionDigits:3});
+      async function carregar(){
+        status.textContent='Consultando saldos e movimentações...';
+        const [b,m,p,v]=await Promise.all([
+          supabaseClient.from('stock_balances').select('*').order('name'),
+          supabaseClient.from('stock_movements').select('id,part_id,movement_type,quantity,movement_date,unit_value,vehicle_id,reference').order('movement_date',{ascending:false}).limit(100),
+          supabaseClient.from('parts').select('id,name,unit,min_stock'),
+          carregarVeiculos()
+        ]);
+        if(b.error){status.textContent=`Erro ao carregar saldos: ${b.error.message}. Execute a migração SQL incluída no ZIP.`;return;}
+        if(m.error){status.textContent=`Erro ao carregar movimentações: ${m.error.message}`;return;}
+        saldo.innerHTML=(b.data||[]).map(x=>`<tr><td>${escapar(x.name)}</td><td>${escapar(x.unit||'un')}</td><td>${fmt(x.min_stock)}</td><td>${fmt(x.quantity_on_hand)}</td><td>${Number(x.quantity_on_hand)<Number(x.min_stock)?'Repor':'OK'}</td></tr>`).join('');
+        const pn=new Map((p.data||[]).map(x=>[String(x.id),x.name])),vn=new Map((v||[]).map(x=>[String(x.id),x.name||x.plate||'Veículo']));
+        mov.innerHTML=(m.data||[]).map(x=>`<tr><td>${escapar(x.movement_date||'—')}</td><td>${escapar(pn.get(String(x.part_id))||'—')}</td><td>${escapar(x.movement_type)}</td><td>${fmt(x.quantity)}</td><td>${moedaLocal(x.unit_value)}</td><td>${escapar(vn.get(String(x.vehicle_id))||'—')}</td></tr>`).join('');
+        status.textContent=`${(b.data||[]).length} produto(s); ${(m.data||[]).length} movimentação(ões) recentes.`;
+      }
+      function moedaLocal(n){return Number(n||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});}
+      document.getElementById('nova-movimentacao').onclick=async()=>{
+        const {data:parts,error}=await supabaseClient.from('parts').select('id,name,unit').eq('active',true).order('name');
+        if(error){alert(`Não foi possível carregar peças: ${error.message}`);return;}
+        let vehicles=[];try{vehicles=await carregarVeiculos()}catch{}
+        form.innerHTML=`<form class="frota-form"><h3>Movimentação de estoque</h3><div class="frota-campos"><label>Peça<select name="part_id" required><option value="">Selecione</option>${(parts||[]).map(x=>`<option value="${escapar(x.id)}">${escapar(x.name)}</option>`).join('')}</select></label><label>Tipo<select name="movement_type"><option value="entrada">Entrada</option><option value="saida">Saída / aplicação</option><option value="ajuste">Ajuste positivo</option></select></label><label>Quantidade<input name="quantity" type="number" min="0.001" step="0.001" required></label><label>Data<input name="movement_date" type="date" value="${new Date().toISOString().slice(0,10)}" required></label><label>Valor unitário (R$)<input name="unit_value" type="number" min="0" step="0.01" value="0" required></label><label>Veículo (se aplicação)<select name="vehicle_id"><option value="">Nenhum</option>${vehicles.map(x=>`<option value="${escapar(x.id)}">${escapar(x.name||x.plate||'Veículo')}</option>`).join('')}</select></label><label>Referência<input name="reference"></label><label>Observações<input name="notes"></label></div><p class="frota-status"></p><div class="frota-acoes"><button class="frota-botao" type="submit">Salvar</button><button class="frota-botao frota-secundario" type="button" id="cancelar-mov">Cancelar</button></div></form>`;
+        form.querySelector('#cancelar-mov').onclick=()=>form.replaceChildren();
+        form.querySelector('form').onsubmit=async e=>{e.preventDefault();const f=e.currentTarget,fd=new FormData(f),data={part_id:fd.get('part_id'),movement_type:fd.get('movement_type'),quantity:Number(fd.get('quantity')),movement_date:fd.get('movement_date'),unit_value:Number(fd.get('unit_value')),vehicle_id:fd.get('vehicle_id')||null,reference:fd.get('reference')||null,notes:fd.get('notes')||null};const msg=f.querySelector('.frota-status');const {error}=await supabaseClient.from('stock_movements').insert(data);if(error){msg.textContent=`Erro ao salvar: ${error.message}`;return;}form.replaceChildren();await carregar();};
+      };
+      document.getElementById('atualizar-estoque').onclick=carregar; await carregar();
+    }
+
+    async function renderizarFinanceiro() {
+      if (!podeFinanceiro) { conteudoModulo.innerHTML='<p class="frota-status">Acesso restrito. Solicite autorização ao administrador.</p>'; return; }
+      conteudoModulo.innerHTML='<div class="frota-acoes"><button type="button" class="frota-botao frota-secundario" id="atualizar-financeiro">Atualizar</button></div><p class="frota-status" id="status-financeiro">Carregando despesas...</p><div id="lista-financeiro"></div>';
+      const status=document.getElementById('status-financeiro'),lista=document.getElementById('lista-financeiro');
+      async function carregar(){
+        status.textContent='Consultando despesas registradas...';
+        const [veiculos,mec,rev,eventos,abast]=await Promise.all([
+          carregarVeiculos(),supabaseClient.from('mechanical_services').select('vehicle_id,service_date,total_value,description'),
+          supabaseClient.from('revisions').select('vehicle_id,completed_date,due_date,total_value,description'),
+          supabaseClient.from('maintenance_event_totals').select('*'),supabaseClient.from('fuel_entries').select('vehicle_id,date,total_value,amount,fuel_cost')
+        ]);
+        const err=[mec,rev,eventos,abast].find(x=>x.error);if(err){status.textContent=`Erro ao consultar dados financeiros: ${err.error.message}`;return;}
+        const rows=[];for(const v of veiculos){const records=[];
+          (mec.data||[]).filter(x=>String(x.vehicle_id)===String(v.id)).forEach(x=>records.push({date:x.service_date,type:'Mecânica',desc:x.description,value:Number(x.total_value||0)}));
+          (rev.data||[]).filter(x=>String(x.vehicle_id)===String(v.id)).forEach(x=>records.push({date:x.completed_date||x.due_date,type:'Revisão',desc:x.description,value:Number(x.total_value||0)}));
+          (eventos.data||[]).filter(x=>String(x.vehicle_id)===String(v.id)).forEach(x=>records.push({date:x.event_date,type:x.event_type,desc:x.description,value:Number(x.total_value||0)}));
+          (abast.data||[]).filter(x=>String(x.vehicle_id)===String(v.id)).forEach(x=>records.push({date:x.date,type:'Abastecimento',desc:'Abastecimento',value:Number(x.total_value??x.fuel_cost??x.amount??0)}));
+          if(records.length){records.sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')));const total=records.reduce((s,x)=>s+x.value,0);rows.push(`<section class="frota-financeiro-veiculo"><h3>${escapar(v.name||v.plate||'Veículo')} — Total: ${total.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</h3><div class="frota-tabela-wrap"><table class="frota-tabela"><thead><tr><th>Data</th><th>Categoria</th><th>Descrição</th><th>Valor</th></tr></thead><tbody>${records.map(x=>`<tr><td>${escapar(x.date||'—')}</td><td>${escapar(x.type)}</td><td>${escapar(x.desc||'—')}</td><td>${x.value.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</td></tr>`).join('')}</tbody></table></div></section>`);}}
+        lista.innerHTML=rows.join('');status.textContent=`Financeiro carregado para ${rows.length} veículo(s). Valores refletem somente registros com valor monetário disponível.`;
+      }
+      document.getElementById('atualizar-financeiro').onclick=carregar;await carregar();
+    }
+
     let graficosRelatorios = [];
     async function renderizarRelatorios() {
       conteudoModulo.innerHTML = `
@@ -427,6 +488,8 @@ document.addEventListener("DOMContentLoaded", async () => {
       if (nomeModulo === "mecanica") renderizarManutencao("mecanica");
       if (nomeModulo === "revisao") renderizarManutencao("revisao");
       if (nomeModulo === "pecas") renderizarPecas();
+      if (nomeModulo === "estoque") renderizarEstoque();
+      if (nomeModulo === "financeiro") renderizarFinanceiro();
       if (nomeModulo === "relatorios") renderizarRelatorios();
     }
 
